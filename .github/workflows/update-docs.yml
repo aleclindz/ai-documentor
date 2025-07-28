@@ -1,0 +1,68 @@
+name: Update Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  update-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Generate documentation
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      run: |
+        # Generate docs in CI mode (no server)
+        node -e "
+        const { DocumentationGenerator } = require('./dist/generators/DocumentationGenerator.js');
+        const { CodebaseAnalyzer } = require('./dist/analyzers/CodebaseAnalyzer.js');
+        const fs = require('fs');
+        
+        async function generateDocs() {
+          const analyzer = new CodebaseAnalyzer(process.cwd());
+          const config = { 
+            openaiApiKey: process.env.OPENAI_API_KEY,
+            outputDir: './docs'
+          };
+          const generator = new DocumentationGenerator(config);
+          
+          const analysis = await analyzer.analyze();
+          const documentation = await generator.generate(analysis);
+          
+          // Save as static files
+          fs.mkdirSync('./generated-docs', { recursive: true });
+          fs.writeFileSync('./generated-docs/documentation.json', JSON.stringify(documentation, null, 2));
+          
+          console.log('✅ Documentation generated successfully!');
+        }
+        
+        generateDocs().catch(console.error);
+        "
+        
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: actions/deploy-pages@v3
+      with:
+        token: ${{ github.token }}
+        artifact_name: generated-docs
+        
+    - name: Upload documentation artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: generated-docs/

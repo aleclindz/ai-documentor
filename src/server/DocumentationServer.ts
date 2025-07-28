@@ -1,24 +1,40 @@
 import express from 'express';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { readFileSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
 import { marked } from 'marked';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
 import { GeneratedDocumentation } from '../generators/DocumentationGenerator.js';
 import { CodebaseAnalyzer } from '../analyzers/CodebaseAnalyzer.js';
 import { DocumentationGenerator } from '../generators/DocumentationGenerator.js';
 import { Config } from '../utils/Config.js';
 
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 export class DocumentationServer {
   private app: express.Application;
+  private server: any;
+  private wss?: WebSocketServer;
   private analyzer: CodebaseAnalyzer;
   private generator?: DocumentationGenerator;
   private documentation?: GeneratedDocumentation;
+  private config: any;
 
   constructor() {
     this.app = express();
+    this.server = createServer(this.app);
     this.analyzer = new CodebaseAnalyzer(process.cwd());
     
     this.setupMiddleware();
     this.setupRoutes();
+    this.setupWebSocket();
+  }
+
+  setConfig(config: any) {
+    this.config = config;
   }
 
   private setupMiddleware(): void {
@@ -101,13 +117,38 @@ export class DocumentationServer {
     }
   }
 
+  private setupWebSocket(): void {
+    this.wss = new WebSocketServer({ server: this.server });
+    
+    this.wss.on('connection', (ws) => {
+      console.log('📱 Client connected');
+      
+      ws.on('close', () => {
+        console.log('📱 Client disconnected');
+      });
+    });
+  }
+
+  refresh(): void {
+    if (this.wss) {
+      this.wss.clients.forEach((client) => {
+        if (client.readyState === 1) { // WebSocket.OPEN
+          client.send(JSON.stringify({ type: 'refresh' }));
+        }
+      });
+    }
+  }
+
   private async generateDocumentation(): Promise<void> {
     try {
-      const config = await Config.load();
-      this.generator = new DocumentationGenerator(config);
+      if (!this.generator && this.config) {
+        this.generator = new DocumentationGenerator(this.config);
+      }
       
       const analysis = await this.analyzer.analyze();
-      this.documentation = await this.generator.generate(analysis);
+      if (this.generator) {
+        this.documentation = await this.generator.generate(analysis);
+      }
     } catch (error) {
       console.error('Failed to generate documentation:', error);
       throw error;
@@ -116,7 +157,7 @@ export class DocumentationServer {
 
   async start(port: number = 3000): Promise<void> {
     return new Promise((resolve) => {
-      this.app.listen(port, () => {
+      this.server.listen(port, () => {
         console.log(`📖 Documentation server running at http://localhost:${port}`);
         resolve();
       });

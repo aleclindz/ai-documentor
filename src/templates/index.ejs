@@ -154,6 +154,27 @@
             }
         });
 
+        // WebSocket for live reloading
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        const ws = new WebSocket(wsUrl);
+
+        ws.onopen = function() {
+            console.log('🔗 Connected to live reload server');
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'refresh') {
+                console.log('🔄 Reloading documentation...');
+                window.location.reload();
+            }
+        };
+
+        ws.onclose = function() {
+            console.log('🔗 Disconnected from live reload server');
+        };
+
         // Load overview by default
         document.addEventListener('DOMContentLoaded', function() {
             loadSection('overview');

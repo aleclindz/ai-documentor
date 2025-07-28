@@ -1,0 +1,32 @@
+{
+  "name": "sample-test-project",
+  "version": "1.0.0",
+  "description": "A sample project for testing ai-documentor",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "build": "webpack --mode production",
+    "test": "jest",
+    "dev": "webpack serve --mode development"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "express": "^4.18.2",
+    "axios": "^1.4.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "@babel/core": "^7.22.0",
+    "@babel/preset-react": "^7.22.0",
+    "babel-loader": "^9.1.0",
+    "jest": "^29.5.0",
+    "typescript": "^5.1.0"
+  },
+  "keywords": ["react", "express", "sample"],
+  "author": "Test Author",
+  "license": "MIT"
+}

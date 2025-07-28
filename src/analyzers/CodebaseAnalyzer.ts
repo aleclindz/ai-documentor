@@ -1,10 +1,12 @@
 import { glob } from 'glob';
 import { readFileSync, statSync } from 'fs';
 import { parse } from '@babel/parser';
-import traverse, { NodePath } from '@babel/traverse';
+import traverse from '@babel/traverse';
+import type { NodePath } from '@babel/traverse';
 import * as t from '@babel/types';
 import { Project } from 'ts-morph';
-import { join, relative, extname } from 'path';
+import { join, relative, extname, dirname } from 'path';
+import * as path from 'path';
 import chokidar from 'chokidar';
 
 export interface FileInfo {
@@ -96,6 +98,66 @@ export interface CodebaseAnalysis {
   database: DatabaseInfo[];
   deployment: DeploymentInfo[];
   architecture: ArchitectureInfo;
+  holisticInsights?: HolisticInsights;
+}
+
+export interface HolisticInsights {
+  codeQuality: CodeQualityMetrics;
+  patterns: ArchitecturalPatterns;
+  dependencies: DependencyAnalysis;
+  security: SecurityInsights;
+  performance: PerformanceInsights;
+  maintainability: MaintainabilityScore;
+}
+
+export interface CodeQualityMetrics {
+  complexity: number;
+  testCoverage: number;
+  codeSmells: string[];
+  duplications: number;
+}
+
+export interface ArchitecturalPatterns {
+  identified: string[];
+  antiPatterns: string[];
+  recommendations: string[];
+}
+
+export interface DependencyAnalysis {
+  outdated: string[];
+  unused: string[];
+  vulnerabilities: string[];
+  bundleSize: number;
+}
+
+export interface SecurityInsights {
+  vulnerabilities: SecurityVulnerability[];
+  recommendations: string[];
+  score: number;
+}
+
+export interface SecurityVulnerability {
+  type: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  file: string;
+  line: number;
+  description: string;
+}
+
+export interface PerformanceInsights {
+  bottlenecks: string[];
+  optimizations: string[];
+  score: number;
+}
+
+export interface MaintainabilityScore {
+  score: number;
+  factors: {
+    complexity: number;
+    documentation: number;
+    testability: number;
+    modularity: number;
+  };
 }
 
 export interface DatabaseInfo {
@@ -127,10 +189,31 @@ export class CodebaseAnalyzer {
     this.rootPath = rootPath;
   }
 
-  async analyze(): Promise<CodebaseAnalysis> {
+  async analyze(progressCallback?: (status: string, progress: number) => void): Promise<CodebaseAnalysis> {
+    progressCallback?.('📋 Reading project configuration...', 0);
     const packageJson = this.readPackageJson();
+    
+    progressCallback?.('🔍 Discovering files...', 10);
     const files = await this.getProjectFiles();
-    const analysisResults = await Promise.all(files.map(f => this.analyzeFile(f)));
+    
+    progressCallback?.('📁 Organizing by directories...', 20);
+    const filesByDirectory = this.groupFilesByDirectory(files);
+    
+    progressCallback?.('⚡ Processing directories in parallel...', 30);
+    const analysisResults = await this.analyzeFilesInParallel(filesByDirectory, progressCallback);
+    
+    progressCallback?.('🔍 Detecting frameworks and technologies...', 80);
+    const frameworks = this.detectFrameworks(analysisResults);
+    const databases = this.detectDatabases(analysisResults);
+    const deployment = this.detectDeployment();
+    
+    progressCallback?.('🏗️ Analyzing architecture...', 90);
+    const architecture = this.analyzeArchitecture(analysisResults);
+    
+    progressCallback?.('🧹 Running holistic sweep...', 95);
+    const holisticAnalysis = await this.performHolisticSweep(analysisResults, frameworks, databases);
+    
+    progressCallback?.('✅ Analysis complete!', 100);
     
     return {
       projectName: packageJson?.name || 'Unknown Project',
@@ -139,10 +222,11 @@ export class CodebaseAnalyzer {
       dependencies: packageJson?.dependencies || {},
       devDependencies: packageJson?.devDependencies || {},
       scripts: packageJson?.scripts || {},
-      framework: this.detectFrameworks(analysisResults),
-      database: this.detectDatabases(analysisResults),
-      deployment: this.detectDeployment(),
-      architecture: this.analyzeArchitecture(analysisResults)
+      framework: frameworks,
+      database: databases,
+      deployment,
+      architecture,
+      holisticInsights: holisticAnalysis
     };
   }
 
@@ -223,7 +307,7 @@ export class CodebaseAnalyzer {
         plugins: ['typescript', 'jsx', 'decorators-legacy']
       });
 
-      traverse(ast, {
+      (traverse as any).default(ast, {
         ImportDeclaration: (path) => {
           fileInfo.dependencies.push(path.node.source.value);
         },
@@ -471,9 +555,288 @@ export class CodebaseAnalyzer {
     return { frontend, backend, database, services, apis };
   }
 
+  private groupFilesByDirectory(files: string[]): Map<string, string[]> {
+    const filesByDirectory = new Map<string, string[]>();
+    
+    files.forEach(file => {
+      const dir = path.dirname(file);
+      if (!filesByDirectory.has(dir)) {
+        filesByDirectory.set(dir, []);
+      }
+      filesByDirectory.get(dir)!.push(file);
+    });
+    
+    return filesByDirectory;
+  }
+
+  private async analyzeFilesInParallel(
+    filesByDirectory: Map<string, string[]>, 
+    progressCallback?: (status: string, progress: number) => void
+  ): Promise<FileInfo[]> {
+    const directories = Array.from(filesByDirectory.keys());
+    const totalDirectories = directories.length;
+    const results: FileInfo[] = [];
+    
+    // Process directories in batches to avoid overwhelming the system
+    const batchSize = Math.min(4, totalDirectories); // Max 4 concurrent directories
+    
+    for (let i = 0; i < totalDirectories; i += batchSize) {
+      const batch = directories.slice(i, i + batchSize);
+      const batchPromises = batch.map(async (dir) => {
+        const files = filesByDirectory.get(dir)!;
+        progressCallback?.(`📁 Processing ${dir}...`, 30 + ((i / totalDirectories) * 40));
+        
+        const dirResults = await Promise.all(
+          files.map(file => this.analyzeFile(file))
+        );
+        return dirResults;
+      });
+      
+      const batchResults = await Promise.all(batchPromises);
+      results.push(...batchResults.flat());
+    }
+    
+    return results;
+  }
+
+  private async performHolisticSweep(
+    files: FileInfo[], 
+    frameworks: string[], 
+    databases: DatabaseInfo[]
+  ): Promise<HolisticInsights> {
+    const codeQuality = this.analyzeCodeQuality(files);
+    const patterns = this.identifyArchitecturalPatterns(files, frameworks);
+    const dependencies = this.analyzeDependencies(files);
+    const security = this.analyzeSecurityConcerns(files);
+    const performance = this.analyzePerformance(files);
+    const maintainability = this.calculateMaintainabilityScore(files);
+
+    return {
+      codeQuality,
+      patterns,
+      dependencies,
+      security,
+      performance,
+      maintainability
+    };
+  }
+
+  private analyzeCodeQuality(files: FileInfo[]): CodeQualityMetrics {
+    let totalComplexity = 0;
+    const codeSmells: string[] = [];
+    let duplications = 0;
+
+    files.forEach(file => {
+      // Calculate cyclomatic complexity
+      const complexity = file.functions.length * 2 + file.classes.length * 3;
+      totalComplexity += complexity;
+
+      // Detect code smells
+      if (file.functions.length > 10) {
+        codeSmells.push(`Too many functions in ${file.relativePath}`);
+      }
+      if (file.content.length > 1000 && file.functions.length < 2) {
+        codeSmells.push(`Large file with few functions: ${file.relativePath}`);
+      }
+      if (file.functions.some(f => f.params.length > 5)) {
+        codeSmells.push(`Functions with too many parameters in ${file.relativePath}`);
+      }
+    });
+
+    // Estimate test coverage (basic heuristic)
+    const testFiles = files.filter(f => 
+      f.relativePath.includes('.test.') || 
+      f.relativePath.includes('.spec.') ||
+      f.relativePath.includes('__tests__')
+    );
+    const testCoverage = Math.min(100, (testFiles.length / files.length) * 200);
+
+    return {
+      complexity: totalComplexity / files.length,
+      testCoverage,
+      codeSmells,
+      duplications
+    };
+  }
+
+  private identifyArchitecturalPatterns(files: FileInfo[], frameworks: string[]): ArchitecturalPatterns {
+    const identified: string[] = [];
+    const antiPatterns: string[] = [];
+    const recommendations: string[] = [];
+
+    // Detect MVC pattern
+    const hasControllers = files.some(f => f.relativePath.includes('controller'));
+    const hasModels = files.some(f => f.relativePath.includes('model'));
+    const hasViews = files.some(f => f.relativePath.includes('view') || f.components.length > 0);
+    
+    if (hasControllers && hasModels && hasViews) {
+      identified.push('MVC (Model-View-Controller)');
+    }
+
+    // Detect Component-based architecture
+    if (frameworks.includes('React') || frameworks.includes('Vue')) {
+      identified.push('Component-based Architecture');
+      
+      // Check for proper component organization
+      const componentFiles = files.filter(f => f.components.length > 0);
+      if (componentFiles.length > 10 && !files.some(f => f.relativePath.includes('components/'))) {
+        antiPatterns.push('Components not organized in dedicated folder');
+        recommendations.push('Organize components in a dedicated components/ directory');
+      }
+    }
+
+    // Detect API patterns
+    const apiFiles = files.filter(f => f.routes.length > 0);
+    if (apiFiles.length > 0) {
+      identified.push('RESTful API Pattern');
+    }
+
+    // Detect layered architecture
+    const hasServices = files.some(f => f.relativePath.includes('service'));
+    const hasRepositories = files.some(f => f.relativePath.includes('repository') || f.relativePath.includes('dao'));
+    
+    if (hasServices && hasRepositories) {
+      identified.push('Layered Architecture');
+    }
+
+    return { identified, antiPatterns, recommendations };
+  }
+
+  private analyzeDependencies(files: FileInfo[]): DependencyAnalysis {
+    const allImports = new Set<string>();
+    files.forEach(file => {
+      file.dependencies.forEach(dep => allImports.add(dep));
+    });
+
+    // This would need external tools for full analysis
+    return {
+      outdated: [], // Would need npm outdated
+      unused: [], // Would need depcheck
+      vulnerabilities: [], // Would need npm audit
+      bundleSize: 0 // Would need webpack-bundle-analyzer
+    };
+  }
+
+  private analyzeSecurityConcerns(files: FileInfo[]): SecurityInsights {
+    const vulnerabilities: SecurityVulnerability[] = [];
+    const recommendations: string[] = [];
+
+    files.forEach(file => {
+      // Check for common security issues
+      if (file.content.includes('eval(')) {
+        vulnerabilities.push({
+          type: 'Code Injection',
+          severity: 'high',
+          file: file.relativePath,
+          line: 0, // Would need more sophisticated parsing
+          description: 'Use of eval() can lead to code injection vulnerabilities'
+        });
+      }
+
+      if (file.content.includes('innerHTML') && !file.content.includes('DOMPurify')) {
+        vulnerabilities.push({
+          type: 'XSS Vulnerability',
+          severity: 'medium',
+          file: file.relativePath,
+          line: 0,
+          description: 'Direct innerHTML assignment without sanitization'
+        });
+      }
+
+      if (file.content.includes('process.env') && file.relativePath.includes('client')) {
+        vulnerabilities.push({
+          type: 'Information Disclosure',
+          severity: 'medium',
+          file: file.relativePath,
+          line: 0,
+          description: 'Environment variables used in client-side code'
+        });
+      }
+    });
+
+    const score = Math.max(0, 100 - (vulnerabilities.length * 10));
+
+    if (score < 80) {
+      recommendations.push('Review and fix identified security vulnerabilities');
+    }
+    if (!files.some(f => f.relativePath.includes('security') || f.relativePath.includes('auth'))) {
+      recommendations.push('Consider implementing dedicated security/authentication modules');
+    }
+
+    return { vulnerabilities, recommendations, score };
+  }
+
+  private analyzePerformance(files: FileInfo[]): PerformanceInsights {
+    const bottlenecks: string[] = [];
+    const optimizations: string[] = [];
+
+    files.forEach(file => {
+      // Check for performance bottlenecks
+      if (file.content.includes('useEffect') && file.content.includes('[]') === false) {
+        bottlenecks.push(`Potential re-render issue in ${file.relativePath}`);
+        optimizations.push('Add dependency arrays to useEffect hooks');
+      }
+
+      if (file.content.includes('map(') && file.content.includes('filter(')) {
+        bottlenecks.push(`Multiple array iterations in ${file.relativePath}`);
+        optimizations.push('Consider combining map and filter operations');
+      }
+
+      if (file.functions.some(f => f.name.includes('sync') && f.isAsync === false)) {
+        bottlenecks.push(`Synchronous operations in ${file.relativePath}`);
+        optimizations.push('Consider making blocking operations asynchronous');
+      }
+    });
+
+    const score = Math.max(0, 100 - (bottlenecks.length * 5));
+
+    return { bottlenecks, optimizations, score };
+  }
+
+  private calculateMaintainabilityScore(files: FileInfo[]): MaintainabilityScore {
+    const avgComplexity = files.reduce((sum, file) => 
+      sum + file.functions.length + file.classes.length, 0) / files.length;
+    
+    const documentationRatio = files.filter(f => 
+      f.content.includes('/**') || f.content.includes('//') || f.content.includes('#')
+    ).length / files.length;
+    
+    const hasTests = files.some(f => 
+      f.relativePath.includes('.test.') || f.relativePath.includes('.spec.')
+    );
+    
+    const hasModularStructure = files.some(f => 
+      f.relativePath.includes('/') && f.exports.length > 0
+    );
+
+    const complexity = Math.max(0, 100 - (avgComplexity * 5));
+    const documentation = documentationRatio * 100;
+    const testability = hasTests ? 80 : 20;
+    const modularity = hasModularStructure ? 90 : 30;
+
+    const overallScore = (complexity + documentation + testability + modularity) / 4;
+
+    return {
+      score: Math.round(overallScore),
+      factors: {
+        complexity: Math.round(complexity),
+        documentation: Math.round(documentation),
+        testability,
+        modularity
+      }
+    };
+  }
+
   watch(callback: (changes: string[]) => void): void {
     const watcher = chokidar.watch(this.rootPath, {
-      ignored: /(^|[\/\\])\../, // ignore dotfiles
+      ignored: [
+        /(^|[\/\\])\../, // ignore dotfiles
+        /node_modules/,
+        /dist/,
+        /build/,
+        /docs/, // ignore documentation output directory
+        /\.git/
+      ],
       persistent: true
     });
 

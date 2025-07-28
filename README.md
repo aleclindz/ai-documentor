@@ -1,62 +1,69 @@
-# 📖 Documentor
+# 🤖 AI Documentor
 
-**Automated documentation generator for any codebase using LLMs**
+**AI-powered documentation generator for any codebase**
 
-Documentor is an open-source tool that analyzes your codebase and generates comprehensive, Confluence-style documentation automatically. It creates detailed explanations of how your application works, perfect for developers who need to understand a new project quickly.
+Generate comprehensive, beautiful documentation for your projects using advanced AI analysis. Simply run one command and get instant, professional documentation with live preview and auto-updates.
+
+[![npm version](https://badge.fury.io/js/ai-documentor.svg)](https://badge.fury.io/js/ai-documentor)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## ✨ Features
 
-- 🔍 **Intelligent Code Analysis** - Parses multiple languages and frameworks
-- 🤖 **LLM-Powered Documentation** - Uses OpenAI GPT-4 for human-readable explanations  
-- 🏗️ **Architecture Diagrams** - Generates Mermaid diagrams automatically
-- 🔄 **User Flow Mapping** - Shows how user actions flow through your system
-- 🌐 **Local Web Interface** - Beautiful documentation viewer
-- ⚡ **Auto-Update** - Watches for code changes and regenerates docs
-- 🎯 **Framework Agnostic** - Works with React, Vue, Express, Next.js, and more
-- 🔧 **Easy Setup** - One command installation and configuration
+- 🚀 **One Command Setup** - Just run `ai-documentor` (no flags needed)
+- 🤖 **AI-Powered Analysis** - Uses OpenAI to understand and document your code
+- 🌐 **Live Server** - Instant preview at `localhost:3000` with hot reload
+- 👀 **File Watching** - Auto-regenerates docs when code changes
+- 📊 **Rich Documentation** - Comprehensive coverage including:
+  - Project overview and architecture
+  - Frontend components and pages
+  - Backend APIs and services  
+  - Database schema and queries
+  - User flows with diagrams
+  - Deployment guides
+  - Troubleshooting sections
+- 🎨 **Beautiful UI** - Modern, responsive web interface
+- 🔄 **GitHub Integration** - Auto-update docs on push
+- 📈 **Real-time Progress** - See what's being analyzed in real-time
 
 ## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-# Install globally
-npm install -g documentor
-
-# Or install in your project
-npm install --save-dev documentor
+npm install -g ai-documentor
 ```
 
-### Initialize in your project
+### Setup
 
-```bash
-cd your-project
-documentor init
-```
+1. **Get an OpenAI API key** from [OpenAI Platform](https://platform.openai.com/api-keys)
 
-This will prompt you to:
-- Enter your OpenAI API key
-- Configure output directory
-- Select frameworks used
-- Choose deployment platforms
-- Set database type
+2. **Add your API key** to `.env` in your project root:
+   ```bash
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
 
-### Generate documentation
+3. **Generate documentation**:
+   ```bash
+   ai-documentor
+   ```
 
-```bash
-# Generate documentation once
-documentor generate
+That's it! Your documentation will be generated and served at `http://localhost:3000` 🎉
 
-# Generate and watch for changes
-documentor generate --watch
+## 📋 Requirements
 
-# Serve documentation locally
-documentor serve
-```
+- Node.js 16+ 
+- OpenAI API key
+- Internet connection for AI analysis
 
-Open http://localhost:3000 to view your documentation!
+## 💡 How It Works
 
-## 📚 What Gets Documented
+1. **Codebase Analysis** - Scans your entire project structure
+2. **AI Processing** - Uses OpenAI GPT-4 to understand code patterns and purpose
+3. **Documentation Generation** - Creates comprehensive docs in multiple sections
+4. **Live Serving** - Hosts documentation on local server with live reload
+5. **Auto-Updates** - Watches for file changes and regenerates automatically
+
+## 📖 Generated Documentation Includes
 
 ### 🏠 Project Overview
 - Project purpose and technology stack
