@@ -1,4 +1,4 @@
-name: Update Documentation
+name: Test Documentation Generation
 
 on:
   push:
@@ -6,17 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
-  update-docs:
+  test-docs:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Checkout code
@@ -67,17 +59,13 @@ jobs:
         generateDocs().catch(console.error);
         "
         
-    - name: Setup Pages
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: actions/configure-pages@v4
-        
-    - name: Upload documentation artifact
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: generated-docs/
-        
-    - name: Deploy to GitHub Pages
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      id: deployment
-      uses: actions/deploy-pages@v4
+    - name: Verify documentation was generated
+      run: |
+        if [ -d "./docs" ]; then
+          echo "✅ Documentation generated successfully!"
+          echo "Generated files:"
+          ls -la ./docs/
+        else
+          echo "❌ Documentation generation failed - no docs directory found"
+          exit 1
+        fi

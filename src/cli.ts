@@ -52,7 +52,16 @@ program
         port: parseInt(process.env.PORT || '3000')
       };
       const generator = new DocumentationGenerator(config);
-      await generator.generate(analysis);
+      
+      // Create streaming progress callback for OpenAI generation
+      const aiProgressCallback = (status: string) => {
+        process.stdout.write(`\r${chalk.cyan(status)}`);
+        if (status.includes('guide')) {
+          process.stdout.write('\n');
+        }
+      };
+      
+      await generator.generate(analysis, aiProgressCallback);
       
       console.log(chalk.green('✅ Documentation generated!'));
       console.log(chalk.blue('🌐 Starting local server...'));
@@ -76,7 +85,15 @@ program
         };
         
         const newAnalysis = await analyzer.analyze(updateProgressCallback);
-        await generator.generate(newAnalysis);
+        
+        const updateAiProgressCallback = (status: string) => {
+          process.stdout.write(`\r  ${chalk.cyan(status)}`);
+          if (status.includes('guide')) {
+            process.stdout.write('\n');
+          }
+        };
+        
+        await generator.generate(newAnalysis, updateAiProgressCallback);
         server.refresh();
         console.log(chalk.green('🔄 Documentation updated!'));
       });

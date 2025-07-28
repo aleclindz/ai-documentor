@@ -157,17 +157,44 @@ export class DocumentationGenerator {
     this.mermaidGenerator = new MermaidGenerator();
   }
 
-  async generate(analysis: CodebaseAnalysis): Promise<GeneratedDocumentation> {
+  async generate(analysis: CodebaseAnalysis, progressCallback?: (status: string) => void): Promise<GeneratedDocumentation> {
+    progressCallback?.('📋 Generating project overview...');
+    const overview = await this.generateOverview(analysis);
+    
+    progressCallback?.('🎨 Analyzing frontend components...');
+    const frontend = await this.generateFrontendDocs(analysis);
+    
+    progressCallback?.('⚙️  Documenting backend services...');
+    const backend = await this.generateBackendDocs(analysis);
+    
+    progressCallback?.('🗄️  Analyzing database structure...');
+    const database = await this.generateDatabaseDocs(analysis);
+    
+    progressCallback?.('🔄 Mapping user workflows...');
+    const userFlows = await this.generateUserFlows(analysis);
+    
+    progressCallback?.('📊 Creating architecture diagrams...');
+    const architectureDiagram = await this.mermaidGenerator.generateArchitectureDiagram(analysis);
+    
+    progressCallback?.('📡 Documenting API endpoints...');
+    const apiDocumentation = await this.generateAPIDocumentation(analysis);
+    
+    progressCallback?.('🚀 Writing deployment guide...');
+    const deploymentGuide = await this.generateDeploymentGuide(analysis);
+    
+    progressCallback?.('🔧 Creating troubleshooting guide...');
+    const troubleshooting = await this.generateTroubleshooting(analysis);
+
     const documentation: GeneratedDocumentation = {
-      overview: await this.generateOverview(analysis),
-      frontend: await this.generateFrontendDocs(analysis),
-      backend: await this.generateBackendDocs(analysis),
-      database: await this.generateDatabaseDocs(analysis),
-      userFlows: await this.generateUserFlows(analysis),
-      architectureDiagram: await this.mermaidGenerator.generateArchitectureDiagram(analysis),
-      apiDocumentation: await this.generateAPIDocumentation(analysis),
-      deploymentGuide: await this.generateDeploymentGuide(analysis),
-      troubleshooting: await this.generateTroubleshooting(analysis)
+      overview,
+      frontend,
+      backend,
+      database,
+      userFlows,
+      architectureDiagram,
+      apiDocumentation,
+      deploymentGuide,
+      troubleshooting
     };
 
     return documentation;
