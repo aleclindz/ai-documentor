@@ -78,7 +78,7 @@ program
       console.log(chalk.yellow('👀 Watching for file changes...'));
       console.log(chalk.gray('💡 Press Ctrl+C to stop the server'));
       
-      // Watch for changes and auto-regenerate
+      // Watch for changes and auto-regenerate (ignore output directory)
       analyzer.watch(async (changes) => {
         console.log(chalk.blue('🔄 Changes detected, regenerating...'));
         
@@ -98,7 +98,7 @@ program
         await generator.generate(newAnalysis, updateAiProgressCallback);
         server.refresh();
         console.log(chalk.green('🔄 Documentation updated!'));
-      });
+      }, config.outputDir);
       
     } catch (error) {
       console.error(chalk.red('❌ Error:'), error instanceof Error ? error.message : String(error));

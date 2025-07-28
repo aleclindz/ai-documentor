@@ -827,16 +827,23 @@ export class CodebaseAnalyzer {
     };
   }
 
-  watch(callback: (changes: string[]) => void): void {
+  watch(callback: (changes: string[]) => void, outputDir?: string): void {
+    const ignorePatterns = [
+      /(^|[\/\\])\../, // ignore dotfiles
+      /node_modules/,
+      /dist/,
+      /build/,
+      /docs/, // ignore default docs directory
+      /\.git/
+    ];
+    
+    // Add custom output directory to ignore list
+    if (outputDir) {
+      ignorePatterns.push(new RegExp(outputDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+    }
+
     const watcher = chokidar.watch(this.rootPath, {
-      ignored: [
-        /(^|[\/\\])\../, // ignore dotfiles
-        /node_modules/,
-        /dist/,
-        /build/,
-        /docs/, // ignore documentation output directory
-        /\.git/
-      ],
+      ignored: ignorePatterns,
       persistent: true
     });
 
