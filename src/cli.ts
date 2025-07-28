@@ -39,8 +39,12 @@ program
       // Create progress callback for real-time updates
       const progressCallback = (status: string, progress: number) => {
         const progressBar = '█'.repeat(Math.floor(progress / 5)) + '░'.repeat(20 - Math.floor(progress / 5));
-        process.stdout.write(`\r${status} [${progressBar}] ${progress.toFixed(0)}%`);
-        if (progress === 100) process.stdout.write('\n');
+        // Clear the line and write new progress
+        process.stdout.write('\r\x1b[K'); // Clear current line
+        process.stdout.write(`${status} [${progressBar}] ${progress.toFixed(0)}%`);
+        if (progress === 100) {
+          process.stdout.write('\n');
+        }
       };
       
       const analysis = await analyzer.analyze(progressCallback);
@@ -55,10 +59,7 @@ program
       
       // Create streaming progress callback for OpenAI generation
       const aiProgressCallback = (status: string) => {
-        process.stdout.write(`\r${chalk.cyan(status)}`);
-        if (status.includes('guide')) {
-          process.stdout.write('\n');
-        }
+        console.log(chalk.cyan(status));
       };
       
       await generator.generate(analysis, aiProgressCallback);
@@ -80,17 +81,15 @@ program
         
         const updateProgressCallback = (status: string, progress: number) => {
           const progressBar = '█'.repeat(Math.floor(progress / 10)) + '░'.repeat(10 - Math.floor(progress / 10));
-          process.stdout.write(`\r  ${status} [${progressBar}] ${progress.toFixed(0)}%`);
+          process.stdout.write('\r\x1b[K'); // Clear current line
+          process.stdout.write(`  ${status} [${progressBar}] ${progress.toFixed(0)}%`);
           if (progress === 100) process.stdout.write('\n');
         };
         
         const newAnalysis = await analyzer.analyze(updateProgressCallback);
         
         const updateAiProgressCallback = (status: string) => {
-          process.stdout.write(`\r  ${chalk.cyan(status)}`);
-          if (status.includes('guide')) {
-            process.stdout.write('\n');
-          }
+          console.log(`  ${chalk.cyan(status)}`);
         };
         
         await generator.generate(newAnalysis, updateAiProgressCallback);

@@ -1,5 +1,7 @@
 import OpenAI from 'openai';
 import { marked } from 'marked';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join } from 'path';
 import { CodebaseAnalysis, FileInfo, FunctionInfo, ComponentInfo, RouteInfo } from '../analyzers/CodebaseAnalyzer.js';
 import { Config } from '../utils/Config.js';
 import { MermaidGenerator } from './MermaidGenerator.js';
@@ -196,6 +198,9 @@ export class DocumentationGenerator {
       deploymentGuide,
       troubleshooting
     };
+
+    // Write documentation to files
+    this.saveDocumentationFiles(documentation);
 
     return documentation;
   }
@@ -611,6 +616,49 @@ Format as organized Markdown with clear sections and code examples.
 `;
 
     return await this.callOpenAI(prompt);
+  }
+
+  private saveDocumentationFiles(documentation: GeneratedDocumentation): void {
+    const outputDir = this.config.outputDir || './docs';
+    
+    // Create output directory if it doesn't exist
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir, { recursive: true });
+    }
+
+    // Save each section as markdown files
+    writeFileSync(join(outputDir, 'overview.md'), documentation.overview);
+    writeFileSync(join(outputDir, 'frontend.md'), this.formatFrontendDocs(documentation.frontend));
+    writeFileSync(join(outputDir, 'backend.md'), this.formatBackendDocs(documentation.backend));
+    writeFileSync(join(outputDir, 'database.md'), this.formatDatabaseDocs(documentation.database));
+    writeFileSync(join(outputDir, 'user-flows.md'), this.formatUserFlows(documentation.userFlows));
+    writeFileSync(join(outputDir, 'architecture.md'), documentation.architectureDiagram);
+    writeFileSync(join(outputDir, 'api.md'), this.formatAPIDocumentation(documentation.apiDocumentation));
+    writeFileSync(join(outputDir, 'deployment.md'), documentation.deploymentGuide);
+    writeFileSync(join(outputDir, 'troubleshooting.md'), documentation.troubleshooting);
+
+    // Save complete documentation as JSON for server use
+    writeFileSync(join(outputDir, 'documentation.json'), JSON.stringify(documentation, null, 2));
+  }
+
+  private formatFrontendDocs(frontend: FrontendDocumentation): string {
+    return `# Frontend Documentation\n\n${frontend.overview}\n\n## Components\n\n${frontend.components.map(c => `### ${c.name}\n${c.purpose}\n\n**Props:** ${c.props.join(', ')}\n\n**Usage:** ${c.usage}\n`).join('\n')}`;
+  }
+
+  private formatBackendDocs(backend: BackendDocumentation): string {
+    return `# Backend Documentation\n\n${backend.overview}\n\n## APIs\n\n${backend.apis.map(api => `### ${api.method} ${api.path}\n${api.purpose}\n`).join('\n')}`;
+  }
+
+  private formatDatabaseDocs(database: DatabaseDocumentation): string {
+    return `# Database Documentation\n\n${database.overview}\n\n## Schema\n\n${database.schema.map(table => `### ${table.name}\n${table.purpose}\n`).join('\n')}\n\n## Queries\n\n${database.queries.map(q => `### ${q.type} Query\n${q.purpose}\n\`\`\`sql\n${q.query}\n\`\`\``).join('\n\n')}`;
+  }
+
+  private formatUserFlows(userFlows: UserFlow[]): string {
+    return `# User Flows\n\n${userFlows.map(flow => `## ${flow.name}\n\n**Description:** ${flow.description}\n\n**Steps:**\n${flow.steps.map((step, i) => `${i + 1}. ${step.action} - ${step.result}`).join('\n')}\n`).join('\n')}`;
+  }
+
+  private formatAPIDocumentation(apis: APIDocumentation[]): string {
+    return `# API Documentation\n\n${apis.map(api => `## ${api.method} ${api.endpoint}\n\n${api.description}\n\n**Parameters:**\n${api.parameters.map(p => `- ${p.name}: ${p.type} - ${p.description}`).join('\n')}\n`).join('\n')}`;
   }
 
   private async callOpenAI(prompt: string): Promise<string> {
