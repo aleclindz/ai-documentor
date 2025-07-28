@@ -63,6 +63,7 @@ program
       
       console.log(chalk.green(`🎉 Documentation is live at http://localhost:${config.port}`));
       console.log(chalk.yellow('👀 Watching for file changes...'));
+      console.log(chalk.gray('💡 Press Ctrl+C to stop the server'));
       
       // Watch for changes and auto-regenerate
       analyzer.watch(async (changes) => {
