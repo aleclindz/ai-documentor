@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📖 Project Documentation</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/documentation.css">
+    <script src="<%= mermaidCDN %>"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <nav class="w-64 bg-white shadow-lg overflow-y-auto">
+            <div class="p-6 border-b border-gray-200">
+                <h1 class="text-xl font-bold text-gray-800">📖 Documentation</h1>
+                <p class="text-sm text-gray-600 mt-1">Project Guide</p>
+            </div>
+            
+            <div class="p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <button onclick="loadSection('overview')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            🏠 Overview
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadSection('architecture')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            🏗️ Architecture
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadSection('frontend')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            🎨 Frontend
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadSection('backend')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            ⚙️ Backend
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadSection('database')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            🗄️ Database
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadSection('userflows')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            🔄 User Flows
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadSection('deployment')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            🚀 Deployment
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="loadSection('troubleshooting')" 
+                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                            🔧 Troubleshooting
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="p-4 border-t border-gray-200 mt-auto">
+                <button onclick="regenerateDocumentation()" 
+                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    🔄 Regenerate
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <div class="max-w-4xl mx-auto p-8">
+                <!-- Loading State -->
+                <div id="loading" class="hidden">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                        <span class="ml-3 text-gray-600">Loading documentation...</span>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div id="content">
+                    <!-- Overview Section (Default) -->
+                    <div class="prose prose-lg max-w-none">
+                        <h1 class="text-4xl font-bold text-gray-900 mb-6">
+                            📖 Project Documentation
+                        </h1>
+                        
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-6 mb-8">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">
+                                        Welcome to your project documentation! Click on any section in the sidebar to explore different aspects of your codebase.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <% if (documentation && documentation.overview) { %>
+                            <div id="overview-content">
+                                <%- documentation.overview %>
+                            </div>
+                        <% } else { %>
+                            <div class="text-center py-12">
+                                <p class="text-gray-500">Click "Overview" in the sidebar to load project documentation.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <footer class="mt-16 pt-8 border-t border-gray-200">
+                    <div class="text-center text-sm text-gray-500">
+                        <p>Generated by <strong>Documentor</strong> • 
+                           <span id="lastUpdated">Last updated: <%= new Date().toLocaleString() %></span>
+                        </p>
+                    </div>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@5.1.1/marked.min.js"></script>
+    <script src="/js/documentation.js"></script>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                fontSize: '16px'
+            }
+        });
+
+        // Load overview by default
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSection('overview');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "openaiApiKey": "your-openai-api-key-here",
+  "outputDirectory": "./docs",
+  "watchMode": false,
+  "includePatterns": [
+    "**/*.{ts,tsx,js,jsx,py,go,rs,java}",
+    "**/*.{json,md,yml,yaml}",
+    "**/package.json",
+    "**/tsconfig.json",
+    "**/next.config.js",
+    "**/vercel.json",
+    "**/supabase/**",
+    "**/prisma/**"
+  ],
+  "excludePatterns": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**",
+    "**/*.min.js",
+    "**/*.test.{ts,js}",
+    "**/*.spec.{ts,js}",
+    "coverage/**",
+    ".next/**",
+    ".nuxt/**"
+  ],
+  "frameworks": [
+    "React",
+    "Next.js",
+    "Express"
+  ],
+  "deploymentPlatforms": [
+    "Vercel"
+  ],
+  "databaseType": "PostgreSQL",
+  "customPrompts": {
+    "overview": "Create a comprehensive project overview that explains what this application does, its purpose, and how someone new to the project can understand it quickly. Focus on business value and user benefits.",
+    "frontend": "Analyze the frontend architecture with special attention to component reusability, state management patterns, and user experience considerations. Explain how data flows through the UI.",
+    "backend": "Document the backend APIs with emphasis on data validation, error handling, and security considerations. Explain the business logic and how different services interact.",
+    "database": "Explain the database schema with focus on data relationships, performance considerations, and data integrity rules. Include common query patterns and optimization strategies."
+  }
+}

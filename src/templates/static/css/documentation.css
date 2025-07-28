@@ -1,0 +1,209 @@
+/* Custom Documentation Styles */
+
+/* Navigation */
+.nav-item.active {
+    @apply bg-blue-100 text-blue-700;
+    border-left: 3px solid #3b82f6;
+}
+
+/* Code Blocks */
+pre[class*="language-"] {
+    @apply rounded-lg;
+    margin: 1.5rem 0;
+}
+
+code[class*="language-"] {
+    @apply text-sm;
+}
+
+/* Mermaid Diagrams */
+.mermaid {
+    @apply bg-white p-4 rounded-lg shadow-sm border border-gray-200 my-6;
+    text-align: center;
+}
+
+/* Content Formatting */
+.prose {
+    @apply text-gray-800;
+}
+
+.prose h1 {
+    @apply text-3xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-4;
+}
+
+.prose h2 {
+    @apply text-2xl font-semibold text-gray-800 mt-8 mb-4 border-b border-gray-100 pb-2;
+}
+
+.prose h3 {
+    @apply text-xl font-medium text-gray-700 mt-6 mb-3;
+}
+
+.prose h4 {
+    @apply text-lg font-medium text-gray-700 mt-4 mb-2;
+}
+
+.prose p {
+    @apply mb-4 leading-relaxed;
+}
+
+.prose ul {
+    @apply list-disc list-inside mb-4 space-y-2;
+}
+
+.prose ol {
+    @apply list-decimal list-inside mb-4 space-y-2;
+}
+
+.prose li {
+    @apply ml-4;
+}
+
+.prose blockquote {
+    @apply border-l-4 border-blue-300 pl-4 italic text-gray-600 my-4 bg-blue-50 py-2;
+}
+
+.prose table {
+    @apply w-full border-collapse border border-gray-300 my-6;
+}
+
+.prose th {
+    @apply bg-gray-100 border border-gray-300 px-4 py-2 text-left font-semibold;
+}
+
+.prose td {
+    @apply border border-gray-300 px-4 py-2;
+}
+
+/* API Documentation Tables */
+.api-table {
+    @apply w-full bg-white shadow-sm rounded-lg overflow-hidden;
+}
+
+.api-table th {
+    @apply bg-gray-50 text-gray-600 font-medium px-6 py-3 text-left uppercase tracking-wider;
+}
+
+.api-table td {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-200;
+}
+
+/* Component Cards */
+.component-card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6;
+}
+
+.component-card h3 {
+    @apply text-lg font-semibold text-gray-800 mb-2;
+}
+
+.component-card .component-meta {
+    @apply text-sm text-gray-500 mb-4;
+}
+
+/* Status Badges */
+.badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+    @apply bg-green-100 text-green-800;
+}
+
+.badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+}
+
+.badge-error {
+    @apply bg-red-100 text-red-800;
+}
+
+.badge-info {
+    @apply bg-blue-100 text-blue-800;
+}
+
+/* File Path Links */
+.file-path {
+    @apply text-sm font-mono text-blue-600 hover:text-blue-800 cursor-pointer bg-gray-100 px-2 py-1 rounded;
+}
+
+/* Loading States */
+.skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+    @apply h-4 bg-gray-200 rounded mb-2 animate-pulse;
+}
+
+.skeleton-title {
+    @apply h-6 bg-gray-200 rounded mb-4 animate-pulse;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-item {
+        @apply text-sm;
+    }
+    
+    .prose {
+        @apply text-base;
+    }
+    
+    .prose h1 {
+        @apply text-2xl;
+    }
+    
+    .prose h2 {
+        @apply text-xl;
+    }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Print Styles */
+@media print {
+    .nav-item, nav, button {
+        display: none !important;
+    }
+    
+    main {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .prose {
+        max-width: none !important;
+    }
+}
+
+/* Dark mode support (future enhancement) */
+@media (prefers-color-scheme: dark) {
+    /* Dark mode styles will be added here */
+}
