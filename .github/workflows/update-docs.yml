@@ -6,9 +6,17 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   update-docs:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Checkout code
@@ -59,15 +67,17 @@ jobs:
         generateDocs().catch(console.error);
         "
         
-    - name: Deploy to GitHub Pages
+    - name: Setup Pages
       if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: actions/deploy-pages@v3
-      with:
-        token: ${{ github.token }}
-        artifact_name: generated-docs
+      uses: actions/configure-pages@v4
         
     - name: Upload documentation artifact
-      uses: actions/upload-artifact@v4
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: actions/upload-pages-artifact@v3
       with:
-        name: documentation
         path: generated-docs/
+        
+    - name: Deploy to GitHub Pages
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      id: deployment
+      uses: actions/deploy-pages@v4
