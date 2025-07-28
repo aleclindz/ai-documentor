@@ -16,13 +16,15 @@ dotenv.config();
 const program = new Command();
 
 program
-  .name('documentor')
+  .name('ai-documentor')
   .description('AI-powered documentation generator with live server')
-  .version('1.0.0');
+  .version('1.0.0')
+  .option('-f, --force', 'Overwrite existing documentation without prompting')
+  .option('-o, --output <dir>', 'Output directory for documentation', './docs');
 
 // Default action - no subcommands needed
 program
-  .action(async () => {
+  .action(async (options) => {
     console.log(chalk.blue('🚀 Starting Documentor...'));
     
     // Check for OpenAI API key
@@ -52,8 +54,9 @@ program
       console.log(chalk.blue('🤖 Generating AI-powered documentation...'));
       const config = { 
         openaiApiKey: process.env.OPENAI_API_KEY,
-        outputDir: './docs',
-        port: parseInt(process.env.PORT || '3000')
+        outputDir: options.output,
+        port: parseInt(process.env.PORT || '3000'),
+        force: options.force
       };
       const generator = new DocumentationGenerator(config);
       

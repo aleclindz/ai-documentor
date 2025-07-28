@@ -1,7 +1,9 @@
 import OpenAI from 'openai';
 import { marked } from 'marked';
-import { writeFileSync, mkdirSync, existsSync } from 'fs';
+import { writeFileSync, mkdirSync, existsSync, statSync, unlinkSync, readdirSync, renameSync, rmSync } from 'fs';
 import { join } from 'path';
+import inquirer from 'inquirer';
+import chalk from 'chalk';
 import { CodebaseAnalysis, FileInfo, FunctionInfo, ComponentInfo, RouteInfo } from '../analyzers/CodebaseAnalyzer.js';
 import { Config } from '../utils/Config.js';
 import { MermaidGenerator } from './MermaidGenerator.js';
@@ -200,7 +202,7 @@ export class DocumentationGenerator {
     };
 
     // Write documentation to files
-    this.saveDocumentationFiles(documentation);
+    await this.saveDocumentationFiles(documentation);
 
     return documentation;
   }
@@ -618,8 +620,109 @@ Format as organized Markdown with clear sections and code examples.
     return await this.callOpenAI(prompt);
   }
 
-  private saveDocumentationFiles(documentation: GeneratedDocumentation): void {
+  private async handleExistingOutput(outputDir: string): Promise<boolean> {
+    if (!existsSync(outputDir)) {
+      return true; // No conflict, proceed
+    }
+
+    const stats = statSync(outputDir);
+    let existingItems: string[] = [];
+    let conflictType = '';
+
+    if (stats.isDirectory()) {
+      try {
+        existingItems = readdirSync(outputDir);
+        conflictType = 'directory';
+      } catch (error) {
+        console.log(chalk.red('❌ Error reading existing docs directory:', error));
+        return false;
+      }
+    } else {
+      conflictType = 'file';
+      existingItems = [outputDir];
+    }
+
+    // Skip prompts if --force flag is set or running in CI
+    if (this.config.force || process.env.CI) {
+      await this.createBackup(outputDir, stats.isDirectory());
+      return true;
+    }
+
+    // Show what exists
+    console.log(chalk.yellow(`\n⚠️  Found existing ${conflictType}: ${outputDir}`));
+    if (conflictType === 'directory' && existingItems.length > 0) {
+      console.log(chalk.gray(`   Contains: ${existingItems.slice(0, 5).join(', ')}${existingItems.length > 5 ? '...' : ''}`));
+    }
+
+    const { action } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'action',
+        message: 'How would you like to proceed?',
+        choices: [
+          { name: '🔄 Create backup and overwrite', value: 'backup' },
+          { name: '❌ Cancel generation', value: 'cancel' },
+          { name: '⚡ Overwrite without backup', value: 'overwrite' }
+        ],
+        default: 'backup'
+      }
+    ]);
+
+    switch (action) {
+      case 'backup':
+        await this.createBackup(outputDir, stats.isDirectory());
+        return true;
+      case 'overwrite':
+        if (stats.isDirectory()) {
+          // Remove directory contents but keep the directory
+          this.clearDirectory(outputDir);
+        } else {
+          unlinkSync(outputDir);
+        }
+        return true;
+      case 'cancel':
+        return false;
+      default:
+        return false;
+    }
+  }
+
+  private async createBackup(outputPath: string, isDirectory: boolean): Promise<void> {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+    const backupPath = `${outputPath}.backup.${timestamp}`;
+    
+    try {
+      console.log(chalk.blue(`💾 Creating backup: ${backupPath}`));
+      renameSync(outputPath, backupPath);
+      console.log(chalk.green(`✅ Backup created successfully`));
+    } catch (error) {
+      console.log(chalk.red('❌ Failed to create backup:', error));
+      throw error;
+    }
+  }
+
+  private clearDirectory(dirPath: string): void {
+    try {
+      const files = readdirSync(dirPath);
+      for (const file of files) {
+        const filePath = join(dirPath, file);
+        rmSync(filePath, { recursive: true, force: true });
+      }
+    } catch (error) {
+      console.log(chalk.red('❌ Error clearing directory:', error));
+      throw error;
+    }
+  }
+
+  private async saveDocumentationFiles(documentation: GeneratedDocumentation): Promise<void> {
     const outputDir = this.config.outputDir || './docs';
+    
+    // Check if output directory/file exists and handle accordingly
+    const shouldProceed = await this.handleExistingOutput(outputDir);
+    if (!shouldProceed) {
+      console.log(chalk.yellow('📄 Documentation generation cancelled by user.'));
+      return;
+    }
     
     // Create output directory if it doesn't exist
     if (!existsSync(outputDir)) {
@@ -639,6 +742,10 @@ Format as organized Markdown with clear sections and code examples.
 
     // Save complete documentation as JSON for server use
     writeFileSync(join(outputDir, 'documentation.json'), JSON.stringify(documentation, null, 2));
+    
+    // Show completion message
+    const fileCount = readdirSync(outputDir).length;
+    console.log(chalk.green(`📝 Successfully wrote ${fileCount} documentation files to ${outputDir}/`));
   }
 
   private formatFrontendDocs(frontend: FrontendDocumentation): string {
