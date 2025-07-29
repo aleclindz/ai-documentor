@@ -22,6 +22,7 @@ export interface GeneratedDocumentation {
 
 export interface FrontendDocumentation {
   overview: string;
+  featuresAndFunctionality: string;
   components: ComponentDocumentation[];
   pages: PageDocumentation[];
   styling: string;
@@ -294,11 +295,58 @@ Create a comprehensive frontend overview covering:
 4. Styling methodology
 5. Key UI patterns and conventions
 
-Provide detailed technical analysis in Markdown format.
+Provide detailed technical analysis in Markdown format with proper headers and subheaders.
 `;
 
-    const [overview, componentsResponse] = await Promise.all([
+    const featuresPrompt = `
+# Frontend Features & Functionality Analysis
+
+Analyze the frontend from a user perspective based on these components and pages:
+
+**Components Detected**:
+${frontendFiles.flatMap(f => f.components).slice(0, 10).map(c => `- ${c.name}: ${c.props.join(', ')}`).join('\n')}
+
+**Routes/Pages**:
+${analysis.files.flatMap(f => f.routes).slice(0, 5).map(r => `- ${r.path} (${r.method})`).join('\n')}
+
+**Key Files**:
+${frontendFiles.slice(0, 5).map(f => `- ${f.relativePath}: ${f.functions.length} functions, ${f.components.length} components`).join('\n')}
+
+Create comprehensive user-focused documentation covering:
+
+## 1. Core Features Overview
+- What can users do with this application?
+- What are the main features and capabilities?
+- What problems does this solve for users?
+
+## 2. User Interface Components
+- What buttons, forms, and interactive elements exist?
+- What does each UI component do from the user's perspective?
+- How do users interact with different parts of the interface?
+
+## 3. User Workflows & Interactions
+- What are the typical user journeys through the application?
+- How do users accomplish their goals?
+- What steps do users take to complete common tasks?
+
+## 4. Data & Information Display
+- What information is shown to users and where?
+- How is data organized and presented?
+- What can users do with the displayed information?
+
+## 5. Navigation & User Experience
+- How do users move between different sections?
+- What navigation patterns are used?
+- How is the user experience optimized?
+
+Focus on user-visible functionality, not technical implementation. Write as if explaining to end users what they can expect when using the application. Use clear, non-technical language while being comprehensive about features and functionality.
+
+Format with proper Markdown headers, subheaders, bullet points, and clear structure.
+`;
+
+    const [overview, featuresAndFunctionality, componentsResponse] = await Promise.all([
       this.callOpenAI(overviewPrompt),
+      this.callOpenAI(featuresPrompt),
       this.callOpenAI(componentsPrompt)
     ]);
 
@@ -322,6 +370,7 @@ Provide detailed technical analysis in Markdown format.
 
     return {
       overview,
+      featuresAndFunctionality,
       components,
       pages: [], // To be implemented based on routing analysis
       styling: 'CSS/SCSS styling system',
@@ -749,7 +798,25 @@ Format as organized Markdown with clear sections and code examples.
   }
 
   private formatFrontendDocs(frontend: FrontendDocumentation): string {
-    return `# Frontend Documentation\n\n${frontend.overview}\n\n## Components\n\n${frontend.components.map(c => `### ${c.name}\n${c.purpose}\n\n**Props:** ${c.props.join(', ')}\n\n**Usage:** ${c.usage}\n`).join('\n')}`;
+    return `# Frontend Documentation
+
+${frontend.featuresAndFunctionality}
+
+---
+
+## Technical Architecture
+
+${frontend.overview}
+
+## Components
+
+${frontend.components.map(c => `### ${c.name}
+${c.purpose}
+
+**Props:** ${c.props.join(', ')}
+
+**Usage:** ${c.usage}
+`).join('\n')}`;
   }
 
   private formatBackendDocs(backend: BackendDocumentation): string {

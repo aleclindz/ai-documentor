@@ -60,9 +60,16 @@ class DocumentationViewer {
                     if (typeof data.content === 'string') {
                         // Overview section returns string directly
                         markdownContent = data.content;
-                    } else if (data.content && typeof data.content === 'object' && data.content.overview) {
-                        // Frontend/Backend sections return object with overview
-                        markdownContent = data.content.overview;
+                    } else if (data.content && typeof data.content === 'object') {
+                        if (section === 'frontend' && data.content.featuresAndFunctionality) {
+                            // Frontend section: combine features and technical overview
+                            markdownContent = `${data.content.featuresAndFunctionality}\n\n---\n\n## Technical Architecture\n\n${data.content.overview || ''}`;
+                        } else if (data.content.overview) {
+                            // Backend/Database sections return object with overview
+                            markdownContent = data.content.overview;
+                        } else {
+                            markdownContent = 'No content available for this section.';
+                        }
                     } else {
                         markdownContent = 'No content available for this section.';
                     }
@@ -133,9 +140,59 @@ class DocumentationViewer {
             return '<div class="text-center py-12"><p class="text-gray-500">No content available for this section.</p></div>';
         }
         
+        // Generate table of contents
+        const toc = this.generateTableOfContents(markdown);
+        
         // Use marked.js to convert markdown to HTML
         const html = marked.parse(markdown);
-        return `<div class="prose prose-lg max-w-none">${html}</div>`;
+        
+        // Combine TOC and content
+        return `
+            <div class="prose prose-lg max-w-none">
+                ${toc ? `<div class="toc-container bg-blue-50 border-l-4 border-blue-400 p-6 mb-8 rounded-r-lg">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3">📋 Table of Contents</h3>
+                    ${toc}
+                </div>` : ''}
+                <div class="content-with-anchors">
+                    ${this.addAnchorLinks(html)}
+                </div>
+            </div>`;
+    }
+
+    generateTableOfContents(markdown) {
+        const headers = markdown.match(/^#{1,3}\s+(.+)$/gm);
+        if (!headers || headers.length < 2) return null;
+        
+        let toc = '<ul class="toc-list space-y-1 text-sm">';
+        headers.forEach(header => {
+            const level = header.match(/^#+/)[0].length;
+            const text = header.replace(/^#+\s+/, '').replace(/[#*`]/g, '');
+            const id = this.generateId(text);
+            const indent = level === 1 ? '' : level === 2 ? 'ml-4' : 'ml-8';
+            
+            toc += `<li class="${indent}"><a href="#${id}" class="text-blue-600 hover:text-blue-800 hover:underline transition-colors">${text}</a></li>`;
+        });
+        toc += '</ul>';
+        
+        return toc;
+    }
+
+    addAnchorLinks(html) {
+        return html.replace(/<h([1-3])([^>]*)>([^<]+)<\/h[1-3]>/g, (match, level, attrs, text) => {
+            const id = this.generateId(text);
+            return `<h${level}${attrs} id="${id}">
+                <a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a>
+                ${text}
+            </h${level}>`;
+        });
+    }
+
+    generateId(text) {
+        return text.toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim();
     }
 
     renderArchitecture(diagram) {
