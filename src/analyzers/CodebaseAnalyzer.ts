@@ -22,6 +22,7 @@ export interface FileInfo {
   components: ComponentInfo[];
   routes: RouteInfo[];
   databaseQueries: DatabaseQuery[];
+  links: InteractionLink[];
 }
 
 export interface FunctionInfo {
@@ -67,6 +68,14 @@ export interface DatabaseQuery {
   location: string;
 }
 
+export interface InteractionLink {
+  uiComponent: string;
+  event: string;
+  apiEndpoint?: string;
+  serviceFunction?: string;
+  dbModel?: string;
+}
+
 export enum FileType {
   TypeScript = 'typescript',
   JavaScript = 'javascript',
@@ -97,6 +106,7 @@ export interface CodebaseAnalysis {
   database: DatabaseInfo[];
   deployment: DeploymentInfo[];
   architecture: ArchitectureInfo;
+  links: InteractionLink[];
   holisticInsights?: HolisticInsights;
 }
 
@@ -225,6 +235,7 @@ export class CodebaseAnalyzer {
       database: databases,
       deployment,
       architecture,
+      links: this.extractInteractionLinks(analysisResults),
       holisticInsights: holisticAnalysis
     };
   }
@@ -287,7 +298,8 @@ export class CodebaseAnalyzer {
       classes: [],
       components: [],
       routes: [],
-      databaseQueries: []
+      databaseQueries: [],
+      links: []
     };
 
     if (fileType === FileType.TypeScript || fileType === FileType.JavaScript || fileType === FileType.React) {
@@ -824,6 +836,45 @@ export class CodebaseAnalyzer {
         modularity
       }
     };
+  }
+
+  private extractInteractionLinks(files: FileInfo[]): InteractionLink[] {
+    const links: InteractionLink[] = [];
+    
+    // Collect all links from files
+    files.forEach(file => {
+      links.push(...file.links);
+    });
+    
+    // Cross-reference API endpoints with backend routes
+    files.forEach(file => {
+      file.routes.forEach(route => {
+        const matchingLinks = links.filter(link => 
+          link.apiEndpoint === route.path || 
+          link.apiEndpoint?.includes(route.path) ||
+          route.path.includes(link.apiEndpoint || '')
+        );
+        matchingLinks.forEach(link => {
+          link.serviceFunction = route.handler;
+        });
+      });
+    });
+    
+    // Cross-reference database queries
+    files.forEach(file => {
+      file.databaseQueries.forEach(query => {
+        const matchingLinks = links.filter(link => 
+          link.serviceFunction && file.functions.some(fn => fn.name === link.serviceFunction)
+        );
+        matchingLinks.forEach(link => {
+          if (!link.dbModel) {
+            link.dbModel = query.table;
+          }
+        });
+      });
+    });
+    
+    return links;
   }
 
 }

@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import { CodebaseAnalysis, FileInfo, FunctionInfo, ComponentInfo, RouteInfo } from '../analyzers/CodebaseAnalyzer.js';
 import { Config } from '../utils/Config.js';
 import { MermaidGenerator } from './MermaidGenerator.js';
+import { slug } from '../utils/slug.js';
 
 export interface GeneratedDocumentation {
   overview: string;
@@ -31,11 +32,13 @@ export interface FrontendDocumentation {
 
 export interface ComponentDocumentation {
   name: string;
+  slug: string;
   purpose: string;
   props: string[];
   usage: string;
   interactions: string;
   filePath: string;
+  uiEvents?: Array<{event: string; description: string; apiEndpointSlug?: string}>;
 }
 
 export interface PageDocumentation {
@@ -56,11 +59,14 @@ export interface BackendDocumentation {
 export interface APIEndpoint {
   method: string;
   path: string;
+  slug: string;
   purpose: string;
   parameters: Parameter[];
   response: string;
   errorHandling: string;
   filePath: string;
+  serviceFunction?: string;
+  linkedComponents?: string[];
 }
 
 export interface Parameter {
@@ -115,6 +121,7 @@ export interface QueryDocumentation {
 
 export interface UserFlow {
   name: string;
+  slug: string;
   description: string;
   steps: UserFlowStep[];
   diagram: string;
@@ -122,9 +129,11 @@ export interface UserFlow {
 
 export interface UserFlowStep {
   action: string;
-  component: string;
-  backendCall?: string;
-  databaseQuery?: string;
+  componentSlug?: string;
+  event?: string;
+  apiSlug?: string;
+  serviceFunction?: string;
+  dbModel?: string;
   result: string;
 }
 
@@ -275,7 +284,7 @@ Format the response as well-structured Markdown with proper headers and engaging
     const componentsPrompt = `
 # Frontend Component Documentation Generation
 
-Analyze these React/Frontend components and create detailed documentation:
+Analyze these React/Frontend components and create detailed documentation with cross-linking support:
 
 ${frontendFiles.slice(0, 5).map(f => `
 ## File: ${f.relativePath}
@@ -288,15 +297,20 @@ ${f.content.slice(0, 1000)}...
 \`\`\`
 `).join('\n')}
 
-For each component, provide:
-1. **Purpose**: What the component does and when to use it
-2. **Props**: Expected properties and their types
-3. **State**: Internal state management
-4. **User Interactions**: How users interact with it
-5. **Data Flow**: How data flows in and out
-6. **Side Effects**: API calls, state updates, etc.
+## UI → API Interaction Mapping:
+${analysis.links.map(l => `- ${l.uiComponent}.${l.event} -> ${l.apiEndpoint}`).join('\n')}
 
-Format as structured JSON that matches the ComponentDocumentation interface.
+For each component, provide:
+1. **name**: Component name
+2. **slug**: URL-friendly slug (auto-generated)
+3. **Purpose**: What the component does and when to use it
+4. **Props**: Expected properties and their types
+5. **User Interactions**: How users interact with it
+6. **uiEvents**: Array of {event, description, apiEndpointSlug} for interactions that call APIs
+7. **Data Flow**: How data flows in and out
+8. **Side Effects**: API calls, state updates, etc.
+
+Format as structured JSON: {"components": [ComponentDocumentation objects]}
 `;
 
     const overviewPrompt = `
@@ -378,6 +392,7 @@ Format with proper Markdown headers, subheaders, bullet points, and clear struct
       components = frontendFiles.flatMap(f => 
         f.components.map(c => ({
           name: c.name,
+          slug: slug(c.name),
           purpose: `${c.name} component`,
           props: c.props,
           usage: `Used in ${f.relativePath}`,
@@ -410,7 +425,7 @@ Format with proper Markdown headers, subheaders, bullet points, and clear struct
     const prompt = `
 # Backend API Documentation Generation
 
-Analyze these backend files and create comprehensive API documentation:
+Analyze these backend files and create comprehensive API documentation with cross-linking:
 
 ${backendFiles.slice(0, 5).map(f => `
 ## File: ${f.relativePath}
@@ -423,14 +438,20 @@ ${f.content.slice(0, 1000)}...
 \`\`\`
 `).join('\n')}
 
-Create detailed documentation covering:
-1. **API Endpoints**: Purpose, parameters, responses, error handling
-2. **Service Functions**: Business logic and data processing
-3. **Middleware**: Authentication, validation, logging
-4. **Error Handling**: How errors are managed and returned
-5. **Database Integration**: How data is accessed and modified
+## UI Component → API Mapping:
+${analysis.links.map(l => `- ${l.uiComponent}.${l.event} -> ${l.apiEndpoint} (${l.serviceFunction || 'handler TBD'})`).join('\n')}
 
-Format the response as structured Markdown with clear sections.
+For each API endpoint, include:
+1. **slug**: URL-friendly identifier (e.g., "get-users", "post-login")
+2. **serviceFunction**: The handler function name
+3. **linkedComponents**: Array of component slugs that call this API
+4. **Purpose**: What this endpoint does
+5. **Parameters**: Request parameters and body
+6. **Response**: Response structure and examples
+7. **Error Handling**: Error codes and messages
+8. **Database Operations**: What data is accessed/modified
+
+Format the response as structured Markdown with clear sections and proper anchor links.
 `;
 
     const response = await this.callOpenAI(prompt);
@@ -439,6 +460,7 @@ Format the response as structured Markdown with clear sections.
       f.routes.map(r => ({
         method: r.method,
         path: r.path,
+        slug: slug(`${r.method}-${r.path}`),
         purpose: `${r.method} endpoint for ${r.path}`,
         parameters: r.params.map(p => ({
           name: p,
@@ -448,7 +470,8 @@ Format the response as structured Markdown with clear sections.
         })),
         response: 'JSON response',
         errorHandling: 'Standard HTTP error codes',
-        filePath: f.relativePath
+        filePath: f.relativePath,
+        serviceFunction: r.handler
       }))
     );
 
@@ -518,7 +541,7 @@ Format as detailed Markdown documentation.
     const prompt = `
 # User Flow Documentation Generation
 
-Based on this application analysis, create detailed user flows:
+Based on this application analysis, create hyper-linked user flows with cross-references:
 
 **Frontend Components**: ${analysis.files.filter(f => f.components.length > 0).map(f => 
   f.components.map(c => c.name).join(', ')
@@ -526,25 +549,46 @@ Based on this application analysis, create detailed user flows:
 
 **API Endpoints**: ${analysis.files.flatMap(f => f.routes).map(r => `${r.method} ${r.path}`).join(', ')}
 
-**Key Features Detected**:
-${analysis.framework.includes('React') ? '- React-based user interface' : ''}
-${analysis.dependencies['next'] ? '- Next.js routing and pages' : ''}
-${Object.keys(analysis.dependencies).some(d => d.includes('auth')) ? '- Authentication system' : ''}
+**Interaction Links**: ${analysis.links.map(l => `${l.uiComponent}.${l.event} → ${l.apiEndpoint} → ${l.dbModel || 'DB'}`).join(', ')}
 
-Create 3-5 major user flows covering:
-1. **User Registration/Login** (if authentication detected)
-2. **Main Application Flow** (primary user journey)
-3. **Data Management** (CRUD operations)
-4. **Error Handling Flow** (what happens when things go wrong)
+Create 3-5 major user flows as structured JSON. Each flow should have:
+- **name**: Descriptive flow name
+- **slug**: URL-friendly identifier
+- **description**: What this flow accomplishes
+- **steps**: Array of detailed steps with cross-links
 
-For each flow, provide:
-- Clear step-by-step user actions
-- Which frontend components are involved
-- What backend APIs are called
-- Database operations that occur
-- Expected outcomes
+Each step should include:
+- **action**: What the user does
+- **componentSlug**: The UI component involved (use kebab-case)
+- **event**: The interaction event (click, submit, etc.)
+- **apiSlug**: The API endpoint called (format: "method-path")
+- **serviceFunction**: Backend handler function name
+- **dbModel**: Database table/model affected
+- **result**: What happens next
 
-Format as structured JSON matching the UserFlow interface.
+Format as: {"userFlows": [UserFlow objects]}
+
+Example structure:
+{
+  "userFlows": [
+    {
+      "name": "User Login",
+      "slug": "user-login", 
+      "description": "User authentication flow",
+      "steps": [
+        {
+          "action": "User clicks login button",
+          "componentSlug": "login-form",
+          "event": "click",
+          "apiSlug": "post-auth-login",
+          "serviceFunction": "handleLogin",
+          "dbModel": "users",
+          "result": "Redirect to dashboard"
+        }
+      ]
+    }
+  ]
+}
 `;
 
     const response = await this.callOpenAI(prompt);
@@ -555,10 +599,11 @@ Format as structured JSON matching the UserFlow interface.
     } catch {
       return [{
         name: 'Main User Flow',
+        slug: slug('Main User Flow'),
         description: 'Primary application workflow',
         steps: [{
           action: 'User interacts with application',
-          component: 'Main component',
+          componentSlug: slug('Main component'),
           result: 'Expected outcome'
         }],
         diagram: await this.mermaidGenerator.generateUserFlowDiagram('basic flow')
@@ -812,6 +857,10 @@ Format as organized Markdown with clear sections and code examples.
 
     // Save complete documentation as JSON for server use
     writeFileSync(join(outputDir, 'documentation.json'), JSON.stringify(documentation, null, 2));
+
+    // Create navigation README
+    const readmeContent = this.generateNavigationReadme(documentation);
+    writeFileSync(join(outputDir, 'README.md'), readmeContent);
     
     // Show completion message
     const fileCount = readdirSync(outputDir).length;
@@ -831,17 +880,48 @@ ${frontend.overview}
 
 ## Components
 
-${frontend.components.map(c => `### ${c.name}
+${frontend.components.map(c => `### ${c.name} {#${c.slug}}
+
 ${c.purpose}
 
 **Props:** ${c.props.join(', ')}
 
 **Usage:** ${c.usage}
+
+${c.uiEvents && c.uiEvents.length > 0 ? `
+**Events → Backend:**
+${c.uiEvents.map(event => `- \`${event.event}\` ➜ [${event.apiEndpointSlug}](backend.md#${event.apiEndpointSlug}) - ${event.description}`).join('\n')}
+` : ''}
 `).join('\n')}`;
   }
 
   private formatBackendDocs(backend: BackendDocumentation): string {
-    return `# Backend Documentation\n\n${backend.overview}\n\n## APIs\n\n${backend.apis.map(api => `### ${api.method} ${api.path}\n${api.purpose}\n`).join('\n')}`;
+    return `# Backend Documentation
+
+${backend.overview}
+
+## API Endpoints
+
+${backend.apis.map(api => `### ${api.method} ${api.path} {#${api.slug}}
+
+${api.purpose}
+
+**Service Function:** \`${api.serviceFunction}\`
+
+${api.linkedComponents && api.linkedComponents.length > 0 ? `
+**Triggered by UI Components:**
+${api.linkedComponents.map(componentSlug => `- [${componentSlug}](frontend.md#${componentSlug})`).join('\n')}
+` : ''}
+
+**Parameters:**
+${api.parameters.map(p => `- **${p.name}** (${p.type}${p.required ? ', required' : ', optional'}): ${p.description}`).join('\n')}
+
+**Response:** ${api.response}
+
+**Error Handling:** ${api.errorHandling}
+
+---
+`).join('\n')}`;
   }
 
   private formatDatabaseDocs(database: DatabaseDocumentation): string {
@@ -849,11 +929,80 @@ ${c.purpose}
   }
 
   private formatUserFlows(userFlows: UserFlow[]): string {
-    return `# User Flows\n\n${userFlows.map(flow => `## ${flow.name}\n\n**Description:** ${flow.description}\n\n**Steps:**\n${flow.steps.map((step, i) => `${i + 1}. ${step.action} - ${step.result}`).join('\n')}\n`).join('\n')}`;
+    return `# User Flows
+
+${userFlows.map(flow => `## ${flow.name} {#${flow.slug}}
+
+**Description:** ${flow.description}
+
+**Steps:**
+${flow.steps.map((step, i) => `${i + 1}. **${step.action}**
+   ${step.componentSlug ? `- **UI Component:** [${step.componentSlug}](frontend.md#${step.componentSlug})` : ''}
+   ${step.event ? `- **Event:** \`${step.event}\`` : ''}
+   ${step.apiSlug ? `- **API Call:** [${step.apiSlug}](backend.md#${step.apiSlug})` : ''}
+   ${step.serviceFunction ? `- **Service:** \`${step.serviceFunction}\`` : ''}
+   ${step.dbModel ? `- **Database:** \`${step.dbModel}\`` : ''}
+   - **Result:** ${step.result}
+`).join('\n')}
+
+---
+`).join('\n')}`;
   }
 
   private formatAPIDocumentation(apis: APIDocumentation[]): string {
     return `# API Documentation\n\n${apis.map(api => `## ${api.method} ${api.endpoint}\n\n${api.description}\n\n**Parameters:**\n${api.parameters.map(p => `- ${p.name}: ${p.type} - ${p.description}`).join('\n')}\n`).join('\n')}`;
+  }
+
+  private generateNavigationReadme(documentation: GeneratedDocumentation): string {
+    return `# Project Documentation
+
+> Regenerate docs anytime with \`ai-documentor\`.
+> View in your browser with \`ai-documentor view\`.
+
+## 🚀 Quick Start
+
+1. **User Flows** – start here to understand how users interact with the application
+${documentation.userFlows.map(f => `     - [${f.name}](user-flows.md#${f.slug})`).join('\n')}
+
+2. **Frontend** – user interface components and interactions
+   - [Frontend Documentation](frontend.md)
+
+3. **Backend** – server-side APIs and business logic  
+   - [Backend Documentation](backend.md)
+
+4. **Database** – data storage and schema
+   - [Database Documentation](database.md)
+
+5. **API Reference** – detailed endpoint documentation
+   - [API Documentation](api.md)
+
+6. **Architecture** – system design and component relationships
+   - [Architecture Diagram](architecture.md)
+
+7. **Deployment** – how to deploy and run the application
+   - [Deployment Guide](deployment.md)
+
+8. **Troubleshooting** – common issues and solutions
+   - [Troubleshooting Guide](troubleshooting.md)
+
+## 📖 CLI Commands
+
+- \`ai-documentor\` - Generate fresh documentation from your codebase
+- \`ai-documentor --force\` - Force regeneration even if docs exist  
+- \`ai-documentor view\` - Start local server to browse documentation
+- \`ai-documentor update\` - Update existing documentation
+- \`ai-documentor --help\` - Show all available options
+
+## 🔗 Cross-References
+
+This documentation includes extensive cross-linking between:
+- User flows → UI components → API endpoints → Database operations
+- Frontend components with their backend API calls
+- API endpoints with the components that trigger them
+- Complete traceability from user action to data persistence
+
+Navigate by clicking on any linked component, API, or database reference to jump directly to its documentation.
+`;
   }
 
   private async callOpenAI(prompt: string): Promise<string> {
