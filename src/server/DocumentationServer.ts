@@ -40,9 +40,9 @@ export class DocumentationServer {
   private setupMiddleware(): void {
     this.app.use(express.json());
     // Serve static files from the templates/static directory
-    this.app.use(express.static(join(__dirname, 'templates/static')));
+    this.app.use(express.static(join(__dirname, '../templates/static')));
     this.app.set('view engine', 'ejs');
-    this.app.set('views', join(__dirname, 'templates'));
+    this.app.set('views', join(__dirname, '../templates'));
   }
 
   private setupRoutes(): void {

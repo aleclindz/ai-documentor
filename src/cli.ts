@@ -12,9 +12,6 @@ import * as fs from 'fs';
 import { join } from 'path';
 import { exec } from 'child_process';
 
-// Load environment variables
-dotenv.config();
-
 const program = new Command();
 
 program
@@ -22,11 +19,16 @@ program
   .description('AI-powered documentation generator')
   .version('1.0.0');
 
-// Default action - generate documentation only
+// Generate command (default) - generate documentation only
 program
+  .command('generate', { isDefault: true })
+  .description('Generate documentation from codebase (default command)')
   .option('-f, --force', 'Overwrite existing documentation without prompting')
   .option('-o, --output <dir>', 'Output directory for documentation', './docs')
   .action(async (options) => {
+    // Load environment variables for commands that need API key
+    dotenv.config();
+    
     console.log(chalk.blue('🚀 Starting Documentation Generation...'));
     
     // Check for OpenAI API key
@@ -143,6 +145,9 @@ program
   .description('Update/regenerate the documentation by analyzing the latest codebase')
   .option('-o, --output <dir>', 'Output directory for documentation', './docs')
   .action(async (options) => {
+    // Load environment variables for commands that need API key
+    dotenv.config();
+    
     console.log(chalk.blue('🔄 Updating Documentation...'));
     
     // Check for OpenAI API key
