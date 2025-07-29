@@ -39,9 +39,10 @@ export class DocumentationServer {
 
   private setupMiddleware(): void {
     this.app.use(express.json());
-    this.app.use(express.static(join(__dirname, '../templates/static')));
+    // Serve static files from the templates/static directory
+    this.app.use(express.static(join(__dirname, 'templates/static')));
     this.app.set('view engine', 'ejs');
-    this.app.set('views', join(__dirname, '../templates'));
+    this.app.set('views', join(__dirname, 'templates'));
   }
 
   private setupRoutes(): void {
@@ -50,7 +51,8 @@ export class DocumentationServer {
       await this.ensureDocumentation();
       res.render('index', { 
         documentation: this.documentation,
-        mermaidCDN: 'https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js'
+        mermaidCDN: 'https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js',
+        marked: marked
       });
     });
 
@@ -113,6 +115,27 @@ export class DocumentationServer {
 
   private async ensureDocumentation(): Promise<void> {
     if (!this.documentation) {
+      await this.loadDocumentation();
+    }
+  }
+
+  private async loadDocumentation(): Promise<void> {
+    try {
+      const outputDir = this.config?.outputDir || './docs';
+      const documentationPath = join(outputDir, 'documentation.json');
+      
+      if (existsSync(documentationPath)) {
+        console.log('📖 Loading existing documentation...');
+        const content = readFileSync(documentationPath, 'utf-8');
+        this.documentation = JSON.parse(content);
+        console.log('✅ Documentation loaded successfully');
+      } else {
+        console.log('📝 No existing documentation found, generating new...');
+        await this.generateDocumentation();
+      }
+    } catch (error) {
+      console.error('❌ Failed to load documentation:', error);
+      console.log('📝 Fallback: generating new documentation...');
       await this.generateDocumentation();
     }
   }
@@ -147,7 +170,9 @@ export class DocumentationServer {
       
       const analysis = await this.analyzer.analyze();
       if (this.generator) {
-        this.documentation = await this.generator.generate(analysis);
+        this.documentation = await this.generator.generate(analysis, (status: string) => {
+          console.log(status);
+        });
       }
     } catch (error) {
       console.error('Failed to generate documentation:', error);

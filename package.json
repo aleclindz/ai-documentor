@@ -8,7 +8,7 @@
     "ai-documentor": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/templates dist/",
     "dev": "ts-node src/cli.ts",
     "start": "node dist/cli.js",
     "watch": "tsc --watch",
@@ -33,6 +33,7 @@
     "chokidar": "^3.6.0",
     "commander": "^11.1.0",
     "dotenv": "^17.2.1",
+    "ejs": "^3.1.10",
     "express": "^4.21.2",
     "glob": "^10.3.10",
     "inquirer": "^9.2.12",

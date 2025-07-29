@@ -331,8 +331,10 @@ function openFile(filePath) {
 document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash.replace('#', '');
     if (hash && ['overview', 'architecture', 'frontend', 'backend', 'database', 'userflows', 'deployment', 'troubleshooting'].includes(hash)) {
-        loadSection(hash);
+        // Small delay to ensure server is ready
+        setTimeout(() => loadSection(hash), 100);
     } else {
-        loadSection('overview');
+        // Small delay to ensure server is ready
+        setTimeout(() => loadSection('overview'), 100);
     }
 });
