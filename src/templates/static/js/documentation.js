@@ -247,10 +247,18 @@ class DocumentationViewer {
     }
 
     addAnchorLinks(html) {
-        // Add anchor links to headers
-        html = html.replace(/<h([1-3])([^>]*)>([^<]+)<\/h[1-3]>/g, (match, level, attrs, text) => {
+        // Add anchor links to headers - improved regex to handle nested HTML better
+        html = html.replace(/<h([1-3])([^>]*)>([^<]*(?:<[^>]*>[^<]*)*)<\/h[1-3]>/g, (match, level, attrs, content) => {
+            // Clean up the text content for ID generation
+            const text = content.replace(/<[^>]*>/g, '').trim();
             const id = this.generateId(text);
-            return `<h${level}${attrs} id="${id}">
+            
+            // Only add anchor if not already present
+            if (attrs.includes('id=') || content.includes('anchor-link')) {
+                return match; // Return original if already processed
+            }
+            
+            return `<h${level} id="${id}"${attrs}>
                 <a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a>
                 ${text}
             </h${level}>`;
