@@ -7,7 +7,6 @@ import * as t from '@babel/types';
 import { Project } from 'ts-morph';
 import { join, relative, extname, dirname } from 'path';
 import * as path from 'path';
-import chokidar from 'chokidar';
 
 export interface FileInfo {
   path: string;
@@ -827,28 +826,4 @@ export class CodebaseAnalyzer {
     };
   }
 
-  watch(callback: (changes: string[]) => void, outputDir?: string): void {
-    const ignorePatterns = [
-      /(^|[\/\\])\../, // ignore dotfiles
-      /node_modules/,
-      /dist/,
-      /build/,
-      /docs/, // ignore default docs directory
-      /\.git/
-    ];
-    
-    // Add custom output directory to ignore list
-    if (outputDir) {
-      ignorePatterns.push(new RegExp(outputDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-    }
-
-    const watcher = chokidar.watch(this.rootPath, {
-      ignored: ignorePatterns,
-      persistent: true
-    });
-
-    watcher.on('change', (path) => callback([path]));
-    watcher.on('add', (path) => callback([path]));
-    watcher.on('unlink', (path) => callback([path]));
-  }
 }
