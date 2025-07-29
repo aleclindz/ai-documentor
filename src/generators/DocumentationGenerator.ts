@@ -756,8 +756,10 @@ Format as organized Markdown with clear sections and code examples.
   }
 
   private async createBackup(outputPath: string, isDirectory: boolean): Promise<void> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-    const backupPath = `${outputPath}.backup.${timestamp}`;
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+    const backupPath = `${outputPath}.backup.${dateStr}-${timeStr}`;
     
     try {
       console.log(chalk.blue(`💾 Creating backup: ${backupPath}`));
