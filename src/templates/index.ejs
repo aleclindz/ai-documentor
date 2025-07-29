@@ -18,89 +18,150 @@
                 <p class="text-sm text-gray-600 mt-1">Project Guide</p>
             </div>
             
-            <div class="p-4">
-                <ul class="space-y-2">
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('overview')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>🏠 Overview</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="overview-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('architecture')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>🏗️ Architecture</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="architecture-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('frontend')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>🎨 Frontend</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="frontend-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('backend')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>⚙️ Backend</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="backend-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('database')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>🗄️ Database</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="database-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('userflows')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>🔄 User Flows</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="userflows-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('deployment')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>🚀 Deployment</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="deployment-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="nav-section">
-                            <button onclick="toggleSection('troubleshooting')" 
-                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
-                                <span>🔧 Troubleshooting</span>
-                                <span class="nav-arrow text-gray-400">▶</span>
-                            </button>
-                            <div id="troubleshooting-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
-                        </div>
-                    </li>
-                </ul>
+            <div class="nav-container">
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('overview')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">🏠</span>
+                            <span class="font-medium">Overview</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="overview-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('overview')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            📄 Project Overview
+                        </button>
+                        <div id="overview-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('architecture')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">🏗️</span>
+                            <span class="font-medium">Architecture</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="architecture-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('architecture')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            🎯 System Design
+                        </button>
+                        <div id="architecture-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('frontend')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">🎨</span>
+                            <span class="font-medium">Frontend</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="frontend-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('frontend')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            💻 User Interface
+                        </button>
+                        <div id="frontend-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('backend')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">⚙️</span>
+                            <span class="font-medium">Backend</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="backend-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('backend')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            🔧 API & Services
+                        </button>
+                        <div id="backend-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('database')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">🗄️</span>
+                            <span class="font-medium">Database</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="database-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('database')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            💾 Data Storage
+                        </button>
+                        <div id="database-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('userflows')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">🔄</span>
+                            <span class="font-medium">User Flows</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="userflows-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('userflows')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            👤 User Journeys
+                        </button>
+                        <div id="userflows-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('deployment')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">🚀</span>
+                            <span class="font-medium">Deployment</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="deployment-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('deployment')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            📦 Deploy Guide
+                        </button>
+                        <div id="deployment-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <button onclick="toggleNavGroup('troubleshooting')" 
+                            class="nav-group-header w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <span class="flex items-center">
+                            <span class="text-lg mr-3">🔧</span>
+                            <span class="font-medium">Troubleshooting</span>
+                        </span>
+                        <span class="nav-chevron text-gray-400 transition-transform duration-200">▶</span>
+                    </button>
+                    <div id="troubleshooting-nav" class="nav-subsection hidden bg-gray-50">
+                        <button onclick="loadSection('troubleshooting')" 
+                                class="nav-item w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                            🛠️ Help & Support
+                        </button>
+                        <div id="troubleshooting-toc" class="nav-toc pl-12 pb-2"></div>
+                    </div>
+                </div>
             </div>
 
             <div class="p-4 border-t border-gray-200 mt-auto">

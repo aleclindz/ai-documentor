@@ -96,13 +96,23 @@ class DocumentationViewer {
     }
 
     updateNavigation(activeSection) {
+        // Clear all active states
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
+        document.querySelectorAll('.nav-group-header').forEach(header => {
+            header.classList.remove('active');
+        });
         
-        const activeItem = document.querySelector(`[onclick="toggleSection('${activeSection}')"]`);
-        if (activeItem) {
-            activeItem.classList.add('active');
+        // Set active section
+        const activeNavItem = document.querySelector(`[onclick="loadSection('${activeSection}')"]`);
+        const activeNavGroup = document.querySelector(`[onclick="toggleNavGroup('${activeSection}')"]`);
+        
+        if (activeNavItem) {
+            activeNavItem.classList.add('active');
+        }
+        if (activeNavGroup) {
+            activeNavGroup.classList.add('active');
         }
     }
 
@@ -129,32 +139,32 @@ class DocumentationViewer {
         tocContainer.innerHTML = tocHtml;
     }
 
-    toggleSection(section) {
-        const tocContainer = document.getElementById(`${section}-toc`);
-        const navButton = document.querySelector(`[onclick="toggleSection('${section}')"]`);
+    toggleNavGroup(section) {
+        const navSubsection = document.getElementById(`${section}-nav`);
+        const navGroupHeader = document.querySelector(`[onclick="toggleNavGroup('${section}')"]`);
         
-        if (!tocContainer || !navButton) return;
+        if (!navSubsection || !navGroupHeader) return;
 
-        // Load the section content if not already loaded
-        this.loadSection(section);
-
-        // Toggle the TOC visibility
-        if (tocContainer.classList.contains('hidden')) {
-            // Close all other sections first
-            document.querySelectorAll('.nav-toc').forEach(toc => {
-                toc.classList.add('hidden');
+        // Toggle the subsection visibility
+        if (navSubsection.classList.contains('hidden')) {
+            // Close all other nav groups first
+            document.querySelectorAll('.nav-subsection').forEach(subsection => {
+                subsection.classList.add('hidden');
             });
-            document.querySelectorAll('.nav-item').forEach(btn => {
-                btn.classList.remove('expanded');
+            document.querySelectorAll('.nav-group-header').forEach(header => {
+                header.classList.remove('expanded', 'active');
             });
 
-            // Open this section
-            tocContainer.classList.remove('hidden');
-            navButton.classList.add('expanded');
+            // Open this nav group
+            navSubsection.classList.remove('hidden');
+            navGroupHeader.classList.add('expanded', 'active');
+
+            // Auto-load the section content
+            this.loadSection(section);
         } else {
-            // Close this section
-            tocContainer.classList.add('hidden');
-            navButton.classList.remove('expanded');
+            // Close this nav group
+            navSubsection.classList.add('hidden');
+            navGroupHeader.classList.remove('expanded', 'active');
         }
     }
 
@@ -211,12 +221,10 @@ class DocumentationViewer {
         // Use marked.js to convert markdown to HTML
         const html = marked.parse(markdown);
         
-        // Just return the content with anchor links (no inline TOC)
+        // Return clean content with anchor links (NO inline TOC at all)
         return `
             <div class="prose prose-lg max-w-none">
-                <div class="content-with-anchors">
-                    ${this.addAnchorLinks(html)}
-                </div>
+                ${this.addAnchorLinks(html)}
             </div>`;
     }
 
@@ -280,7 +288,7 @@ class DocumentationViewer {
                     // Don't replace if already inside a link
                     if (match.includes('<a') || match.includes('</a>')) return match;
                     
-                    return `<a href="#" onclick="toggleSection('${section}')" class="section-link text-blue-600 hover:text-blue-800 underline transition-colors">${match}</a>`;
+                    return `<a href="#" onclick="toggleNavGroup('${section}')" class="section-link text-blue-600 hover:text-blue-800 underline transition-colors">${match}</a>`;
                 });
             });
         });
@@ -301,7 +309,7 @@ class DocumentationViewer {
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">📎 See Also</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         ${relatedSections.map(section => `
-                            <a href="#" onclick="toggleSection('${section.id}')" 
+                            <a href="#" onclick="toggleNavGroup('${section.id}')" 
                                class="block p-4 bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
                                 <div class="font-medium text-gray-900">${section.label}</div>
                                 <div class="text-sm text-gray-600 mt-1">${section.description}</div>
@@ -556,8 +564,8 @@ function loadSection(section) {
     docViewer.loadSection(section);
 }
 
-function toggleSection(section) {
-    docViewer.toggleSection(section);
+function toggleNavGroup(section) {
+    docViewer.toggleNavGroup(section);
 }
 
 function scrollToSection(id) {
@@ -577,9 +585,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash.replace('#', '');
     if (hash && ['overview', 'architecture', 'frontend', 'backend', 'database', 'userflows', 'deployment', 'troubleshooting'].includes(hash)) {
         // Small delay to ensure server is ready
-        setTimeout(() => toggleSection(hash), 100);
+        setTimeout(() => toggleNavGroup(hash), 100);
     } else {
         // Small delay to ensure server is ready
-        setTimeout(() => toggleSection('overview'), 100);
+        setTimeout(() => toggleNavGroup('overview'), 100);
     }
 });
