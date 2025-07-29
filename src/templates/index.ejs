@@ -21,52 +21,84 @@
             <div class="p-4">
                 <ul class="space-y-2">
                     <li>
-                        <button onclick="loadSection('overview')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            🏠 Overview
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('overview')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>🏠 Overview</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="overview-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                     <li>
-                        <button onclick="loadSection('architecture')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            🏗️ Architecture
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('architecture')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>🏗️ Architecture</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="architecture-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                     <li>
-                        <button onclick="loadSection('frontend')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            🎨 Frontend
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('frontend')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>🎨 Frontend</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="frontend-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                     <li>
-                        <button onclick="loadSection('backend')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            ⚙️ Backend
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('backend')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>⚙️ Backend</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="backend-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                     <li>
-                        <button onclick="loadSection('database')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            🗄️ Database
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('database')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>🗄️ Database</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="database-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                     <li>
-                        <button onclick="loadSection('userflows')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            🔄 User Flows
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('userflows')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>🔄 User Flows</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="userflows-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                     <li>
-                        <button onclick="loadSection('deployment')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            🚀 Deployment
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('deployment')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>🚀 Deployment</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="deployment-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                     <li>
-                        <button onclick="loadSection('troubleshooting')" 
-                                class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors">
-                            🔧 Troubleshooting
-                        </button>
+                        <div class="nav-section">
+                            <button onclick="toggleSection('troubleshooting')" 
+                                    class="nav-item w-full text-left px-4 py-2 rounded-lg hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-between">
+                                <span>🔧 Troubleshooting</span>
+                                <span class="nav-arrow text-gray-400">▶</span>
+                            </button>
+                            <div id="troubleshooting-toc" class="nav-toc hidden ml-6 mt-2 space-y-1"></div>
+                        </div>
                     </li>
                 </ul>
             </div>

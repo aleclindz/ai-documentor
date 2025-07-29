@@ -25,6 +25,7 @@ program
   .description('Generate documentation from codebase (default command)')
   .option('-f, --force', 'Overwrite existing documentation without prompting')
   .option('-o, --output <dir>', 'Output directory for documentation', './docs')
+  .option('-d, --debug', 'Enable debug logging to show detailed progress')
   .action(async (options) => {
     // Load environment variables for commands that need API key
     dotenv.config();
@@ -43,8 +44,15 @@ program
       const config = { 
         openaiApiKey: process.env.OPENAI_API_KEY,
         outputDir: options.output,
-        force: options.force
+        force: options.force,
+        debug: options.debug
       };
+
+      if (options.debug) {
+        console.log(chalk.gray('🔍 Debug mode enabled'));
+        console.log(chalk.gray(`📁 Output directory: ${config.outputDir}`));
+        console.log(chalk.gray(`🔧 Force mode: ${config.force}`));
+      }
 
       // Check if documentation already exists (unless force regeneration)
       const docsPath = join(config.outputDir, 'documentation.json');
@@ -57,6 +65,10 @@ program
         return;
       }
 
+      if (options.debug) {
+        console.log(chalk.gray('⚡ Initializing codebase analyzer...'));
+      }
+      
       const analyzer = new CodebaseAnalyzer(process.cwd());
       
       // Create progress callback for real-time updates
@@ -68,19 +80,51 @@ program
         if (progress === 100) {
           process.stdout.write('\n');
         }
+        
+        if (options.debug) {
+          console.log(chalk.gray(`  📊 ${status} - ${progress.toFixed(1)}%`));
+        }
       };
+      
+      if (options.debug) {
+        console.log(chalk.gray('🔍 Starting codebase analysis...'));
+      }
+      const startTime = Date.now();
       
       const analysis = await analyzer.analyze(progressCallback);
       
+      if (options.debug) {
+        const analysisTime = Date.now() - startTime;
+        console.log(chalk.gray(`✅ Analysis completed in ${analysisTime}ms`));
+        console.log(chalk.gray(`📁 Files analyzed: ${analysis.files.length}`));
+        console.log(chalk.gray(`🏗️ Frameworks detected: ${analysis.framework.join(', ')}`));
+      }
+      
       console.log(chalk.blue('🤖 Generating AI-powered documentation...'));
+      if (options.debug) {
+        console.log(chalk.gray('🎯 Initializing DocumentationGenerator...'));
+      }
       const generator = new DocumentationGenerator(config);
       
       // Create streaming progress callback for OpenAI generation
       const aiProgressCallback = (status: string) => {
         console.log(chalk.cyan(status));
+        if (options.debug) {
+          console.log(chalk.gray(`  🤖 ${status} - ${new Date().toLocaleTimeString()}`));
+        }
       };
       
+      if (options.debug) {
+        console.log(chalk.gray('🚀 Starting AI documentation generation...'));
+      }
+      const genStartTime = Date.now();
+      
       await generator.generate(analysis, aiProgressCallback);
+      
+      if (options.debug) {
+        const genTime = Date.now() - genStartTime;
+        console.log(chalk.gray(`✅ AI generation completed in ${genTime}ms`));
+      }
       
       console.log(chalk.green('✅ Documentation generated!'));
       console.log(chalk.blue(`📁 Files saved to: ${config.outputDir}`));
@@ -144,6 +188,7 @@ program
   .command('update')
   .description('Update/regenerate the documentation by analyzing the latest codebase')
   .option('-o, --output <dir>', 'Output directory for documentation', './docs')
+  .option('-d, --debug', 'Enable debug logging to show detailed progress')
   .action(async (options) => {
     // Load environment variables for commands that need API key
     dotenv.config();

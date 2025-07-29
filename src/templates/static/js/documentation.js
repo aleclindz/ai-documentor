@@ -100,9 +100,74 @@ class DocumentationViewer {
             item.classList.remove('active');
         });
         
-        const activeItem = document.querySelector(`[onclick="loadSection('${activeSection}')"]`);
+        const activeItem = document.querySelector(`[onclick="toggleSection('${activeSection}')"]`);
         if (activeItem) {
             activeItem.classList.add('active');
+        }
+    }
+
+    updateSidebarTOC(section, markdown) {
+        const tocContainer = document.getElementById(`${section}-toc`);
+        if (!tocContainer) return;
+
+        const headers = markdown.match(/^#{1,3}\s+(.+)$/gm);
+        if (!headers || headers.length < 2) {
+            tocContainer.innerHTML = '<div class="text-xs text-gray-500 px-3 py-1">No sections found</div>';
+            return;
+        }
+        
+        let tocHtml = '';
+        headers.forEach(header => {
+            const level = header.match(/^#+/)[0].length;
+            const text = header.replace(/^#+\s+/, '').replace(/[#*`]/g, '');
+            const id = this.generateId(text);
+            const indent = level === 1 ? '' : level === 2 ? 'ml-4' : 'ml-8';
+            
+            tocHtml += `<a href="#${id}" class="${indent} toc-link" onclick="scrollToSection('${id}')">${text}</a>`;
+        });
+        
+        tocContainer.innerHTML = tocHtml;
+    }
+
+    toggleSection(section) {
+        const tocContainer = document.getElementById(`${section}-toc`);
+        const navButton = document.querySelector(`[onclick="toggleSection('${section}')"]`);
+        
+        if (!tocContainer || !navButton) return;
+
+        // Load the section content if not already loaded
+        this.loadSection(section);
+
+        // Toggle the TOC visibility
+        if (tocContainer.classList.contains('hidden')) {
+            // Close all other sections first
+            document.querySelectorAll('.nav-toc').forEach(toc => {
+                toc.classList.add('hidden');
+            });
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('expanded');
+            });
+
+            // Open this section
+            tocContainer.classList.remove('hidden');
+            navButton.classList.add('expanded');
+        } else {
+            // Close this section
+            tocContainer.classList.add('hidden');
+            navButton.classList.remove('expanded');
+        }
+    }
+
+    scrollToSection(id) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // Update active TOC link
+            document.querySelectorAll('.toc-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[onclick="scrollToSection('${id}')"]`)?.classList.add('active');
         }
     }
 
@@ -140,19 +205,15 @@ class DocumentationViewer {
             return '<div class="text-center py-12"><p class="text-gray-500">No content available for this section.</p></div>';
         }
         
-        // Generate table of contents
-        const toc = this.generateTableOfContents(markdown);
+        // Generate sidebar TOC for the current section
+        this.updateSidebarTOC(this.currentSection, markdown);
         
         // Use marked.js to convert markdown to HTML
         const html = marked.parse(markdown);
         
-        // Combine TOC and content
+        // Just return the content with anchor links (no inline TOC)
         return `
             <div class="prose prose-lg max-w-none">
-                ${toc ? `<div class="toc-container bg-blue-50 border-l-4 border-blue-400 p-6 mb-8 rounded-r-lg">
-                    <h3 class="text-lg font-semibold text-blue-900 mb-3">📋 Table of Contents</h3>
-                    ${toc}
-                </div>` : ''}
                 <div class="content-with-anchors">
                     ${this.addAnchorLinks(html)}
                 </div>
@@ -178,13 +239,121 @@ class DocumentationViewer {
     }
 
     addAnchorLinks(html) {
-        return html.replace(/<h([1-3])([^>]*)>([^<]+)<\/h[1-3]>/g, (match, level, attrs, text) => {
+        // Add anchor links to headers
+        html = html.replace(/<h([1-3])([^>]*)>([^<]+)<\/h[1-3]>/g, (match, level, attrs, text) => {
             const id = this.generateId(text);
             return `<h${level}${attrs} id="${id}">
                 <a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a>
                 ${text}
             </h${level}>`;
         });
+
+        // Add cross-references between sections
+        html = this.addCrossReferences(html);
+
+        return html;
+    }
+
+    addCrossReferences(html) {
+        const sectionLinks = {
+            'frontend': '🎨 Frontend',
+            'backend': '⚙️ Backend', 
+            'database': '🗄️ Database',
+            'architecture': '🏗️ Architecture',
+            'userflows': '🔄 User Flows',
+            'deployment': '🚀 Deployment',
+            'troubleshooting': '🔧 Troubleshooting',
+            'overview': '🏠 Overview'
+        };
+
+        // Replace section references with clickable links
+        Object.entries(sectionLinks).forEach(([section, label]) => {
+            const patterns = [
+                new RegExp(`\\b${section}\\b`, 'gi'),
+                new RegExp(`\\b${section} section\\b`, 'gi'),
+                new RegExp(`\\bsee ${section}\\b`, 'gi'),
+                new RegExp(`\\brefer to ${section}\\b`, 'gi')
+            ];
+
+            patterns.forEach(pattern => {
+                html = html.replace(pattern, (match) => {
+                    // Don't replace if already inside a link
+                    if (match.includes('<a') || match.includes('</a>')) return match;
+                    
+                    return `<a href="#" onclick="toggleSection('${section}')" class="section-link text-blue-600 hover:text-blue-800 underline transition-colors">${match}</a>`;
+                });
+            });
+        });
+
+        // Add "See also" sections at the end of content
+        html = this.addSeeAlsoSections(html);
+
+        return html;
+    }
+
+    addSeeAlsoSections(html) {
+        const currentSection = this.currentSection;
+        const relatedSections = this.getRelatedSections(currentSection);
+        
+        if (relatedSections.length > 0) {
+            const seeAlsoHtml = `
+                <div class="see-also mt-12 pt-8 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">📎 See Also</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${relatedSections.map(section => `
+                            <a href="#" onclick="toggleSection('${section.id}')" 
+                               class="block p-4 bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
+                                <div class="font-medium text-gray-900">${section.label}</div>
+                                <div class="text-sm text-gray-600 mt-1">${section.description}</div>
+                            </a>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            html += seeAlsoHtml;
+        }
+
+        return html;
+    }
+
+    getRelatedSections(currentSection) {
+        const relationships = {
+            'overview': [
+                { id: 'architecture', label: '🏗️ Architecture', description: 'System design and component relationships' },
+                { id: 'frontend', label: '🎨 Frontend', description: 'User interface and client-side functionality' }
+            ],
+            'frontend': [
+                { id: 'backend', label: '⚙️ Backend', description: 'Server-side APIs and business logic' },
+                { id: 'userflows', label: '🔄 User Flows', description: 'How users interact with the application' }
+            ],
+            'backend': [
+                { id: 'frontend', label: '🎨 Frontend', description: 'Client-side interface that calls these APIs' },
+                { id: 'database', label: '🗄️ Database', description: 'Data storage and persistence layer' }
+            ],
+            'database': [
+                { id: 'backend', label: '⚙️ Backend', description: 'Server-side logic that queries the database' },
+                { id: 'architecture', label: '🏗️ Architecture', description: 'Overall system design including data flow' }
+            ],
+            'architecture': [
+                { id: 'frontend', label: '🎨 Frontend', description: 'Client-side architecture details' },
+                { id: 'backend', label: '⚙️ Backend', description: 'Server-side architecture components' }
+            ],
+            'userflows': [
+                { id: 'frontend', label: '🎨 Frontend', description: 'UI components used in these workflows' },
+                { id: 'backend', label: '⚙️ Backend', description: 'APIs called during user interactions' }
+            ],
+            'deployment': [
+                { id: 'troubleshooting', label: '🔧 Troubleshooting', description: 'Common deployment issues and solutions' },
+                { id: 'architecture', label: '🏗️ Architecture', description: 'System components being deployed' }
+            ],
+            'troubleshooting': [
+                { id: 'deployment', label: '🚀 Deployment', description: 'Deployment procedures and requirements' },
+                { id: 'architecture', label: '🏗️ Architecture', description: 'System design for debugging context' }
+            ]
+        };
+
+        return relationships[currentSection] || [];
     }
 
     generateId(text) {
@@ -387,6 +556,14 @@ function loadSection(section) {
     docViewer.loadSection(section);
 }
 
+function toggleSection(section) {
+    docViewer.toggleSection(section);
+}
+
+function scrollToSection(id) {
+    docViewer.scrollToSection(id);
+}
+
 function regenerateDocumentation() {
     docViewer.regenerateDocumentation();
 }
@@ -400,9 +577,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash.replace('#', '');
     if (hash && ['overview', 'architecture', 'frontend', 'backend', 'database', 'userflows', 'deployment', 'troubleshooting'].includes(hash)) {
         // Small delay to ensure server is ready
-        setTimeout(() => loadSection(hash), 100);
+        setTimeout(() => toggleSection(hash), 100);
     } else {
         // Small delay to ensure server is ready
-        setTimeout(() => loadSection('overview'), 100);
+        setTimeout(() => toggleSection('overview'), 100);
     }
 });

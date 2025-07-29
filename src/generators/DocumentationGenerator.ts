@@ -210,35 +210,54 @@ export class DocumentationGenerator {
 
   private async generateOverview(analysis: CodebaseAnalysis): Promise<string> {
     const prompt = `
-# Project Documentation Overview Generation
+# Project Overview Documentation for End Users
 
-You are an expert technical writer creating comprehensive documentation for a software project. 
+You are writing documentation for a software project that will be read by both technical and non-technical users. Your goal is to create a welcoming, user-focused overview that explains what this application does and why someone would want to use it.
 
 ## Project Analysis:
 - **Project Name**: ${analysis.projectName}
-- **Frameworks**: ${analysis.framework.join(', ')}
-- **File Count**: ${analysis.files.length}
-- **Dependencies**: ${Object.keys(analysis.dependencies).length} main dependencies
-- **Architecture**: Frontend (${analysis.architecture.frontend.length} files), Backend (${analysis.architecture.backend.length} files)
+- **Technology Stack**: ${analysis.framework.join(', ')}
+- **File Count**: ${analysis.files.length} files
+- **Main Dependencies**: ${Object.keys(analysis.dependencies).slice(0, 8).join(', ')}
+- **Architecture**: ${analysis.architecture.frontend.length} frontend files, ${analysis.architecture.backend.length} backend files
 
-## Dependencies:
-${Object.entries(analysis.dependencies).map(([name, version]) => `- ${name}: ${version}`).join('\n')}
+## Key Dependencies:
+${Object.entries(analysis.dependencies).slice(0, 10).map(([name, version]) => `- ${name}: ${version}`).join('\n')}
 
-## Key Files:
-${analysis.files.slice(0, 10).map(f => `- ${f.relativePath} (${f.functions.length} functions, ${f.components.length} components)`).join('\n')}
+## Main Application Files:
+${analysis.files.slice(0, 8).map(f => `- ${f.relativePath} (${f.functions.length} functions, ${f.components.length} components)`).join('\n')}
 
-Create a comprehensive project overview that includes:
+Create a user-friendly project overview in **1-2 paragraphs** that covers:
 
-1. **Project Purpose**: What this application does and who it's for
-2. **Technology Stack**: Detailed breakdown of frameworks, libraries, and tools used
-3. **Architecture Overview**: High-level structure and how components interact
-4. **Key Features**: Main functionality and capabilities
-5. **Project Structure**: How the codebase is organized
-6. **Getting Started**: Brief setup and running instructions
+## What This Application Does
+Write as if explaining to a friend or colleague who doesn't know programming. Focus on:
+- What problem does this solve for users?
+- What can people do with this application?
+- Who would find this useful?
+- What makes this application special or different?
 
-Write this as if explaining to a developer who knows nothing about the project but needs to understand it quickly. Use clear, professional language and include specific technical details where relevant.
+## How It Works (Simple Explanation)  
+Explain the basic concept without technical jargon:
+- What happens when someone uses the application?
+- What is the user experience like?
+- How does information flow through the system?
 
-Format the response in well-structured Markdown.
+## Key Features & Capabilities
+List the main things users can do:
+- Primary features and functionality
+- User workflows and interactions
+- Types of data or content handled
+- Main user benefits
+
+## Technology Overview (Friendly)
+Briefly explain the technical foundation in accessible terms:
+- What frameworks/technologies power the application
+- Why these technologies were chosen (benefits to users)
+- How the different parts work together
+
+Write in a warm, welcoming tone that makes the project approachable to anyone reading the documentation. Avoid technical jargon and focus on user value and practical benefits. Use clear, conversational language while still being informative and professional.
+
+Format the response as well-structured Markdown with proper headers and engaging content.
 `;
 
     return await this.callOpenAI(prompt);
