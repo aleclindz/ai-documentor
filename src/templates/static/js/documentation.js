@@ -55,7 +55,18 @@ class DocumentationViewer {
                 } else if (section === 'userflows') {
                     content = this.renderUserFlows(data.content);
                 } else {
-                    content = this.renderMarkdown(data.content);
+                    // Handle different content structures
+                    let markdownContent;
+                    if (typeof data.content === 'string') {
+                        // Overview section returns string directly
+                        markdownContent = data.content;
+                    } else if (data.content && typeof data.content === 'object' && data.content.overview) {
+                        // Frontend/Backend sections return object with overview
+                        markdownContent = data.content.overview;
+                    } else {
+                        markdownContent = 'No content available for this section.';
+                    }
+                    content = this.renderMarkdown(markdownContent);
                 }
                 
                 // Cache the content

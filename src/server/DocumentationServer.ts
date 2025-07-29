@@ -181,10 +181,21 @@ export class DocumentationServer {
   }
 
   async start(port: number = 3000): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.server.listen(port, () => {
         console.log(`📖 Documentation server running at http://localhost:${port}`);
         resolve();
+      });
+      
+      this.server.on('error', (error: any) => {
+        if (error.code === 'EADDRINUSE') {
+          console.log(`❌ Port ${port} is already in use`);
+          console.log(`💡 Stop the existing server or use a different port with --port <port>`);
+          process.exit(1);
+        } else {
+          console.error(`❌ Server error:`, error);
+          reject(error);
+        }
       });
     });
   }
