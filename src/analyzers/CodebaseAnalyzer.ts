@@ -274,12 +274,18 @@ export class CodebaseAnalyzer {
 
     const ignorePatterns = [
       'node_modules/**',
+      '**/node_modules/**',
       'dist/**',
       'build/**',
       '.git/**',
+      'evals/**',
       '**/*.min.js',
       '**/*.test.{ts,js}',
-      '**/*.spec.{ts,js}'
+      '**/*.spec.{ts,js}',
+      '**/*.d.ts', // Skip TypeScript definition files that cause parsing issues
+      'coverage/**',
+      '.nyc_output/**',
+      'docs.backup*/**'
     ];
 
     const files: string[] = [];
@@ -447,7 +453,10 @@ export class CodebaseAnalyzer {
         }
       });
     } catch (error) {
-      console.warn(`Failed to parse ${fileInfo.relativePath}:`, error);
+      // Skip parsing errors for TypeScript definition files and external dependencies
+      if (!fileInfo.relativePath.includes('node_modules') && !fileInfo.relativePath.endsWith('.d.ts')) {
+        console.warn(`Failed to parse ${fileInfo.relativePath}:`, error);
+      }
     }
   }
 
@@ -460,7 +469,10 @@ export class CodebaseAnalyzer {
         }
       }
     } catch (error) {
-      console.warn(`Failed to parse JSON ${fileInfo.relativePath}:`, error);
+      // Skip parsing errors for external dependencies
+      if (!fileInfo.relativePath.includes('node_modules')) {
+        console.warn(`Failed to parse JSON ${fileInfo.relativePath}:`, error);
+      }
     }
   }
 
