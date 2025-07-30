@@ -969,15 +969,35 @@ Format as organized Markdown with clear sections and code examples.
       mkdirSync(outputDir, { recursive: true });
     }
 
-    // Save each section as markdown files
+    // Save each section as markdown files (only if they exist)
     writeFileSync(join(outputDir, 'overview.md'), documentation.overview);
-    writeFileSync(join(outputDir, 'frontend.md'), this.formatFrontendDocs(documentation.frontend));
-    writeFileSync(join(outputDir, 'backend.md'), this.formatBackendDocs(documentation.backend));
-    writeFileSync(join(outputDir, 'database.md'), this.formatDatabaseDocs(documentation.database));
-    writeFileSync(join(outputDir, 'user-flows.md'), this.formatUserFlows(documentation.userFlows));
+    
+    if (documentation.frontend) {
+      writeFileSync(join(outputDir, 'frontend.md'), this.formatFrontendDocs(documentation.frontend));
+    }
+    
+    if (documentation.backend) {
+      writeFileSync(join(outputDir, 'backend.md'), this.formatBackendDocs(documentation.backend));
+    }
+    
+    if (documentation.database) {
+      writeFileSync(join(outputDir, 'database.md'), this.formatDatabaseDocs(documentation.database));
+    }
+    
+    if (documentation.userFlows && documentation.userFlows.length > 0) {
+      writeFileSync(join(outputDir, 'user-flows.md'), this.formatUserFlows(documentation.userFlows));
+    }
+    
     writeFileSync(join(outputDir, 'architecture.md'), documentation.architectureDiagram);
-    writeFileSync(join(outputDir, 'api.md'), this.formatAPIDocumentation(documentation.apiDocumentation));
-    writeFileSync(join(outputDir, 'deployment.md'), documentation.deploymentGuide);
+    
+    if (documentation.apiDocumentation) {
+      writeFileSync(join(outputDir, 'api.md'), this.formatAPIDocumentation(documentation.apiDocumentation));
+    }
+    
+    if (documentation.deploymentGuide) {
+      writeFileSync(join(outputDir, 'deployment.md'), documentation.deploymentGuide);
+    }
+    
     writeFileSync(join(outputDir, 'troubleshooting.md'), documentation.troubleshooting);
 
     // Save complete documentation as JSON for server use
@@ -1079,6 +1099,31 @@ ${flow.steps.map((step, i) => `${i + 1}. **${step.action}**
   }
 
   private generateNavigationReadme(documentation: GeneratedDocumentation): string {
+    let quickStartItems: string[] = [];
+    
+    // Only include sections that were actually generated
+    if (documentation.userFlows && documentation.userFlows.length > 0) {
+      quickStartItems.push(`1. **User Workflows** – understand how to use this application
+${documentation.userFlows.map(f => `     - [${f.name}](user-flows.md#${f.slug})`).join('\n')}`);
+    }
+    
+    let sectionNumber = documentation.userFlows && documentation.userFlows.length > 0 ? 2 : 1;
+    
+    if (documentation.frontend) {
+      quickStartItems.push(`${sectionNumber++}. **Frontend** – user interface components and interactions
+   - [Frontend Documentation](frontend.md)`);
+    }
+    
+    if (documentation.backend) {
+      quickStartItems.push(`${sectionNumber++}. **Backend** – server-side APIs and business logic  
+   - [Backend Documentation](backend.md)`);
+    }
+    
+    if (documentation.database) {
+      quickStartItems.push(`${sectionNumber++}. **Database** – data storage and schema
+   - [Database Documentation](database.md)`);
+    }
+    
     return `# Project Documentation
 
 > Regenerate docs anytime with \`ai-documentor\`.
@@ -1086,28 +1131,18 @@ ${flow.steps.map((step, i) => `${i + 1}. **${step.action}**
 
 ## 🚀 Quick Start
 
-1. **User Flows** – start here to understand how users interact with the application
-${documentation.userFlows.map(f => `     - [${f.name}](user-flows.md#${f.slug})`).join('\n')}
+${quickStartItems.join('\n\n')}
 
-2. **Frontend** – user interface components and interactions
-   - [Frontend Documentation](frontend.md)
-
-3. **Backend** – server-side APIs and business logic  
-   - [Backend Documentation](backend.md)
-
-4. **Database** – data storage and schema
-   - [Database Documentation](database.md)
-
-5. **API Reference** – detailed endpoint documentation
+${documentation.apiDocumentation ? `${sectionNumber++}. **API Reference** – detailed endpoint documentation
    - [API Documentation](api.md)
 
-6. **Architecture** – system design and component relationships
+` : ''}${sectionNumber++}. **Architecture** – system design and component relationships
    - [Architecture Diagram](architecture.md)
 
-7. **Deployment** – how to deploy and run the application
+${documentation.deploymentGuide ? `${sectionNumber++}. **Deployment** – how to deploy and run the application
    - [Deployment Guide](deployment.md)
 
-8. **Troubleshooting** – common issues and solutions
+` : ''}${sectionNumber++}. **Troubleshooting** – common issues and solutions
    - [Troubleshooting Guide](troubleshooting.md)
 
 ## 📖 CLI Commands
