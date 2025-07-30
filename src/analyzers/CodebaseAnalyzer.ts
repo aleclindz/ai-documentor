@@ -95,6 +95,17 @@ export enum FileType {
   Unknown = 'unknown'
 }
 
+export interface RelevantSections {
+  frontend: boolean;
+  backend: boolean;
+  database: boolean;
+  api: boolean;
+  cli: boolean;
+  userWorkflows: boolean;
+  deployment: boolean;
+  troubleshooting: boolean;
+}
+
 export interface CodebaseAnalysis {
   projectName: string;
   rootPath: string;
@@ -107,6 +118,7 @@ export interface CodebaseAnalysis {
   deployment: DeploymentInfo[];
   architecture: ArchitectureInfo;
   links: InteractionLink[];
+  relevantSections: RelevantSections;
   holisticInsights?: HolisticInsights;
 }
 
@@ -224,6 +236,9 @@ export class CodebaseAnalyzer {
     
     progressCallback?.('✅ Analysis complete!', 100);
     
+    progressCallback?.('🎯 Detecting relevant sections...', 98);
+    const relevantSections = this.detectRelevantSections(analysisResults, frameworks, databases, packageJson);
+
     return {
       projectName: packageJson?.name || 'Unknown Project',
       rootPath: this.rootPath,
@@ -236,7 +251,8 @@ export class CodebaseAnalyzer {
       deployment,
       architecture,
       links: this.extractInteractionLinks(analysisResults),
-      holisticInsights: holisticAnalysis
+      holisticInsights: holisticAnalysis,
+      relevantSections
     };
   }
 
@@ -875,6 +891,52 @@ export class CodebaseAnalyzer {
     });
     
     return links;
+  }
+
+  private detectRelevantSections(files: FileInfo[], frameworks: string[], databases: DatabaseInfo[], packageJson: any): RelevantSections {
+    const hasComponents = files.some(f => f.components.length > 0);
+    const hasUIFiles = files.some(f => 
+      f.type === FileType.React || f.type === FileType.Vue || f.type === FileType.Svelte ||
+      f.relativePath.includes('components') || f.relativePath.includes('pages') ||
+      f.relativePath.includes('views') || f.type === FileType.CSS || f.type === FileType.SCSS
+    );
+    
+    const hasBackendFiles = files.some(f => 
+      f.routes.length > 0 || f.functions.some(fn => fn.name.includes('handler') || fn.name.includes('controller')) ||
+      f.relativePath.includes('server') || f.relativePath.includes('api') || f.relativePath.includes('backend')
+    );
+    
+    const hasAPIEndpoints = files.some(f => f.routes.length > 0);
+    
+    const hasDatabaseCode = databases.length > 0 || files.some(f => 
+      f.databaseQueries.length > 0 || 
+      f.dependencies.some(dep => ['mongoose', 'prisma', 'sequelize', 'typeorm', 'pg', 'mysql', 'sqlite'].includes(dep)) ||
+      f.relativePath.includes('models') || f.relativePath.includes('schema')
+    );
+    
+    const isCLITool = packageJson?.bin !== undefined || 
+      frameworks.includes('CLI') ||
+      Object.keys(packageJson?.dependencies || {}).includes('commander') ||
+      Object.keys(packageJson?.dependencies || {}).includes('yargs') ||
+      files.some(f => f.relativePath.includes('cli') || f.content.includes('#!/usr/bin/env node'));
+    
+    const hasDeploymentConfig = files.some(f => 
+      f.relativePath.includes('Dockerfile') || f.relativePath.includes('docker-compose') ||
+      f.relativePath.includes('.yml') || f.relativePath.includes('.yaml') ||
+      f.relativePath.includes('deploy') || f.relativePath.includes('k8s') ||
+      f.relativePath.includes('terraform') || f.relativePath === 'package.json'
+    );
+
+    return {
+      frontend: hasComponents || hasUIFiles,
+      backend: hasBackendFiles,
+      database: hasDatabaseCode,
+      api: hasAPIEndpoints,
+      cli: isCLITool,
+      userWorkflows: isCLITool || hasAPIEndpoints, // CLI tools and APIs need user workflow docs
+      deployment: hasDeploymentConfig || hasBackendFiles || hasUIFiles,
+      troubleshooting: true // Always include troubleshooting
+    };
   }
 
 }

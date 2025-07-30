@@ -175,26 +175,41 @@ export class DocumentationGenerator {
     progressCallback?.('📋 Generating project overview...');
     const overview = await this.generateOverview(analysis);
     
-    progressCallback?.('🎨 Analyzing frontend components...');
-    const frontend = await this.generateFrontendDocs(analysis);
+    // Only generate sections that are relevant to this codebase
+    let frontend, backend, database, userFlows, apiDocumentation, deploymentGuide;
     
-    progressCallback?.('⚙️  Documenting backend services...');
-    const backend = await this.generateBackendDocs(analysis);
+    if (analysis.relevantSections.frontend) {
+      progressCallback?.('🎨 Analyzing frontend components...');
+      frontend = await this.generateFrontendDocs(analysis);
+    }
     
-    progressCallback?.('🗄️  Analyzing database structure...');
-    const database = await this.generateDatabaseDocs(analysis);
+    if (analysis.relevantSections.backend) {
+      progressCallback?.('⚙️  Documenting backend services...');
+      backend = await this.generateBackendDocs(analysis);
+    }
     
-    progressCallback?.('🔄 Mapping user workflows...');
-    const userFlows = await this.generateUserFlows(analysis);
+    if (analysis.relevantSections.database) {
+      progressCallback?.('🗄️  Analyzing database structure...');
+      database = await this.generateDatabaseDocs(analysis);
+    }
+    
+    if (analysis.relevantSections.userWorkflows) {
+      progressCallback?.('🔄 Generating user workflows...');
+      userFlows = await this.generateUserWorkflows(analysis);
+    }
     
     progressCallback?.('📊 Creating architecture diagrams...');
     const architectureDiagram = await this.mermaidGenerator.generateArchitectureDiagram(analysis);
     
-    progressCallback?.('📡 Documenting API endpoints...');
-    const apiDocumentation = await this.generateAPIDocumentation(analysis);
+    if (analysis.relevantSections.api) {
+      progressCallback?.('📡 Documenting API endpoints...');
+      apiDocumentation = await this.generateAPIDocumentation(analysis);
+    }
     
-    progressCallback?.('🚀 Writing deployment guide...');
-    const deploymentGuide = await this.generateDeploymentGuide(analysis);
+    if (analysis.relevantSections.deployment) {
+      progressCallback?.('🚀 Writing deployment guide...');
+      deploymentGuide = await this.generateDeploymentGuide(analysis);
+    }
     
     progressCallback?.('🔧 Creating troubleshooting guide...');
     const troubleshooting = await this.generateTroubleshooting(analysis);
@@ -537,7 +552,117 @@ Format as detailed Markdown documentation.
     };
   }
 
-  private async generateUserFlows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
+  private async generateUserWorkflows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
+    // For CLI tools, generate user workflow documentation instead of application user flows
+    if (analysis.relevantSections.cli) {
+      return await this.generateCLIUserWorkflows(analysis);
+    }
+    
+    // For web applications, generate traditional user flows
+    return await this.generateApplicationUserFlows(analysis);
+  }
+
+  private async generateCLIUserWorkflows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
+    const prompt = `
+# CLI User Workflow Documentation Generation
+
+Analyze this CLI tool and create structured user workflow documentation covering installation, setup, and usage patterns.
+
+## Project Analysis:
+**Package Name**: ${analysis.projectName}
+**Technology**: ${analysis.framework.join(', ')}
+**Dependencies**: ${Object.keys(analysis.dependencies).slice(0, 10).join(', ')}
+**Scripts**: ${Object.keys(analysis.scripts).join(', ')}
+**Binary**: ${analysis.dependencies.commander ? 'CLI tool with commander.js' : 'Node.js application'}
+
+## CLI Commands Detected:
+Based on the codebase analysis, this appears to be a CLI tool with these patterns:
+- Main executable commands
+- Command-line options and flags  
+- Configuration requirements
+- Output and interaction patterns
+
+Create user workflow documentation as JSON with this structure:
+
+{
+  "workflows": [
+    {
+      "name": "Installation & Setup",
+      "slug": "installation-setup",
+      "description": "Getting started with the CLI tool",
+      "steps": [
+        {
+          "action": "Install prerequisites",
+          "details": "Node.js version requirements, system dependencies",
+          "commands": ["node --version"],
+          "result": "System ready for installation"
+        },
+        {
+          "action": "Install the tool",
+          "details": "Global vs local installation options",
+          "commands": ["npm install -g ${analysis.projectName}"],
+          "result": "Tool available system-wide"
+        }
+      ]
+    },
+    {
+      "name": "Basic Usage",
+      "slug": "basic-usage", 
+      "description": "Common commands and workflows",
+      "steps": [
+        {
+          "action": "Run basic command",
+          "details": "Primary use cases and command patterns",
+          "commands": ["${analysis.projectName} --help"],
+          "result": "See available options"
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "slug": "configuration",
+      "description": "Setting up environment and config files",
+      "steps": [
+        {
+          "action": "Set up configuration",
+          "details": "Environment variables, config files, API keys",
+          "commands": ["create .env file", "add required variables"],
+          "result": "Tool configured and ready to use"
+        }
+      ]
+    }
+  ]
+}
+
+Return only the JSON structure with practical, actionable workflow steps for CLI users.
+`;
+
+    try {
+      const response = await this.callOpenAI(prompt);
+      const parsed = JSON.parse(response);
+      
+      // Convert to UserFlow format expected by the system
+      return parsed.workflows?.map((workflow: any) => ({
+        name: workflow.name,
+        slug: workflow.slug,
+        description: workflow.description,
+        steps: workflow.steps?.map((step: any) => ({
+          action: step.action,
+          component: 'CLI',
+          event: 'command',
+          apiEndpoint: step.commands?.join(', ') || '',
+          serviceFunction: 'CLI execution',
+          dbModel: '',
+          result: step.result
+        })) || []
+      })) || [];
+    } catch (error) {
+      console.error('Error generating CLI user workflows:', error);
+      return [];
+    }
+  }
+
+  private async generateApplicationUserFlows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
     const prompt = `
 # User Flow Documentation Generation
 

@@ -64,22 +64,42 @@ export class DocumentationServer {
 
     this.app.get('/api/frontend', async (req, res) => {
       await this.ensureDocumentation();
-      res.json({ content: this.documentation?.frontend });
+      const content = this.documentation?.frontend;
+      if (!content) {
+        res.json({ content: 'This project does not contain frontend components or user interface code.' });
+      } else {
+        res.json({ content });
+      }
     });
 
     this.app.get('/api/backend', async (req, res) => {
       await this.ensureDocumentation();
-      res.json({ content: this.documentation?.backend });
+      const content = this.documentation?.backend;
+      if (!content) {
+        res.json({ content: 'This project does not contain backend server code or API endpoints.' });
+      } else {
+        res.json({ content });
+      }
     });
 
     this.app.get('/api/database', async (req, res) => {
       await this.ensureDocumentation();
-      res.json({ content: this.documentation?.database });
+      const content = this.documentation?.database;
+      if (!content) {
+        res.json({ content: 'This project does not contain database connections or data persistence code.' });
+      } else {
+        res.json({ content });
+      }
     });
 
     this.app.get('/api/userflows', async (req, res) => {
       await this.ensureDocumentation();
-      res.json({ content: this.documentation?.userFlows });
+      const content = this.documentation?.userFlows;
+      if (!content || content.length === 0) {
+        res.json({ content: 'No user workflow documentation available for this project type.' });
+      } else {
+        res.json({ content });
+      }
     });
 
     this.app.get('/api/architecture', async (req, res) => {
@@ -89,7 +109,12 @@ export class DocumentationServer {
 
     this.app.get('/api/deployment', async (req, res) => {
       await this.ensureDocumentation();
-      res.json({ content: this.documentation?.deploymentGuide });
+      const content = this.documentation?.deploymentGuide;
+      if (!content) {
+        res.json({ content: 'No deployment configuration detected for this project.' });
+      } else {
+        res.json({ content });
+      }
     });
 
     this.app.get('/api/troubleshooting', async (req, res) => {

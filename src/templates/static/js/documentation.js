@@ -219,12 +219,18 @@ class DocumentationViewer {
         this.updateSidebarTOC(this.currentSection, markdown);
         
         // Use marked.js to convert markdown to HTML
-        const html = marked.parse(markdown);
+        let html = marked.parse(markdown);
         
-        // Return clean content with anchor links (NO inline TOC at all)
+        // Add anchor links
+        html = this.addAnchorLinks(html);
+        
+        // Add cross-references between sections
+        html = this.addCrossReferences(html);
+        
+        // Return clean content with anchor links
         return `
             <div class="prose prose-lg max-w-none">
-                ${this.addAnchorLinks(html)}
+                ${html}
             </div>`;
     }
 
@@ -247,27 +253,26 @@ class DocumentationViewer {
     }
 
     addAnchorLinks(html) {
-        // Add anchor links to headers - improved regex to handle nested HTML better
-        html = html.replace(/<h([1-3])([^>]*)>([^<]*(?:<[^>]*>[^<]*)*)<\/h[1-3]>/g, (match, level, attrs, content) => {
-            // Clean up the text content for ID generation
-            const text = content.replace(/<[^>]*>/g, '').trim();
-            const id = this.generateId(text);
-            
-            // Only add anchor if not already present
-            if (attrs.includes('id=') || content.includes('anchor-link')) {
-                return match; // Return original if already processed
+        // More robust anchor link handling
+        return html.replace(/<h([1-3])([^>]*)>(.*?)<\/h[1-3]>/gs, (match, level, attrs, content) => {
+            // Skip if already has an ID or anchor link
+            if (attrs.includes('id=') || content.includes('anchor-link') || content.includes('class="anchor-link"')) {
+                return match;
             }
             
-            return `<h${level} id="${id}"${attrs}>
-                <a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a>
-                ${text}
-            </h${level}>`;
+            // Extract clean text content for ID generation
+            const text = content.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim();
+            
+            // Skip if no meaningful text content
+            if (!text || text.length < 2) {
+                return match;
+            }
+            
+            const id = this.generateId(text);
+            
+            // Construct clean header with anchor link
+            return `<h${level} id="${id}"${attrs}><a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a> ${text}</h${level}>`;
         });
-
-        // Add cross-references between sections
-        html = this.addCrossReferences(html);
-
-        return html;
     }
 
     addCrossReferences(html) {
