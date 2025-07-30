@@ -100,72 +100,23 @@ class DocumentationViewer {
         document.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
         });
-        document.querySelectorAll('.nav-group-header').forEach(header => {
-            header.classList.remove('active');
-        });
         
         // Set active section
         const activeNavItem = document.querySelector(`[onclick="loadSection('${activeSection}')"]`);
-        const activeNavGroup = document.querySelector(`[onclick="toggleNavGroup('${activeSection}')"]`);
         
         if (activeNavItem) {
             activeNavItem.classList.add('active');
         }
-        if (activeNavGroup) {
-            activeNavGroup.classList.add('active');
-        }
     }
 
     updateSidebarTOC(section, markdown) {
-        const tocContainer = document.getElementById(`${section}-toc`);
-        if (!tocContainer) return;
-
-        const headers = markdown.match(/^#{1,3}\s+(.+)$/gm);
-        if (!headers || headers.length < 2) {
-            tocContainer.innerHTML = '<div class="text-xs text-gray-500 px-3 py-1">No sections found</div>';
-            return;
-        }
-        
-        let tocHtml = '';
-        headers.forEach(header => {
-            const level = header.match(/^#+/)[0].length;
-            const text = header.replace(/^#+\s+/, '').replace(/[#*`]/g, '');
-            const id = this.generateId(text);
-            const indent = level === 1 ? '' : level === 2 ? 'ml-4' : 'ml-8';
-            
-            tocHtml += `<a href="#${id}" class="${indent} toc-link" onclick="scrollToSection('${id}')">${text}</a>`;
-        });
-        
-        tocContainer.innerHTML = tocHtml;
+        // Simplified - no longer using sidebar TOC with the new navigation structure
+        return;
     }
 
     toggleNavGroup(section) {
-        const navSubsection = document.getElementById(`${section}-nav`);
-        const navGroupHeader = document.querySelector(`[onclick="toggleNavGroup('${section}')"]`);
-        
-        if (!navSubsection || !navGroupHeader) return;
-
-        // Toggle the subsection visibility
-        if (navSubsection.classList.contains('hidden')) {
-            // Close all other nav groups first
-            document.querySelectorAll('.nav-subsection').forEach(subsection => {
-                subsection.classList.add('hidden');
-            });
-            document.querySelectorAll('.nav-group-header').forEach(header => {
-                header.classList.remove('expanded', 'active');
-            });
-
-            // Open this nav group
-            navSubsection.classList.remove('hidden');
-            navGroupHeader.classList.add('expanded', 'active');
-
-            // Auto-load the section content
-            this.loadSection(section);
-        } else {
-            // Close this nav group
-            navSubsection.classList.add('hidden');
-            navGroupHeader.classList.remove('expanded', 'active');
-        }
+        // Simplified - just load the section directly
+        this.loadSection(section);
     }
 
     scrollToSection(id) {
@@ -221,11 +172,12 @@ class DocumentationViewer {
         // Use marked.js to convert markdown to HTML
         let html = marked.parse(markdown);
         
-        // Add anchor links
-        html = this.addAnchorLinks(html);
-        
-        // Add cross-references between sections
+        // Add cross-references between sections BEFORE anchor links
+        // This prevents cross-reference processing from interfering with headers
         html = this.addCrossReferences(html);
+        
+        // Add anchor links AFTER cross-references
+        html = this.addAnchorLinks(html);
         
         // Return clean content with anchor links
         return `
@@ -253,10 +205,15 @@ class DocumentationViewer {
     }
 
     addAnchorLinks(html) {
-        // More robust anchor link handling
+        // More robust anchor link handling - preserve original content structure
         return html.replace(/<h([1-3])([^>]*)>(.*?)<\/h[1-3]>/gs, (match, level, attrs, content) => {
-            // Skip if already has an ID or anchor link
-            if (attrs.includes('id=') || content.includes('anchor-link') || content.includes('class="anchor-link"')) {
+            // Skip if already has an ID
+            if (attrs.includes('id=')) {
+                return match;
+            }
+            
+            // Skip if already has anchor link
+            if (content.includes('anchor-link') || content.includes('class="anchor-link"')) {
                 return match;
             }
             
@@ -270,8 +227,8 @@ class DocumentationViewer {
             
             const id = this.generateId(text);
             
-            // Construct clean header with anchor link
-            return `<h${level} id="${id}"${attrs}><a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a> ${text}</h${level}>`;
+            // Preserve original content structure and just add ID to header + anchor link at the beginning
+            return `<h${level} id="${id}"${attrs}><a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a> ${content}</h${level}>`;
         });
     }
 
@@ -297,8 +254,14 @@ class DocumentationViewer {
             ];
 
             patterns.forEach(pattern => {
-                html = html.replace(pattern, (match) => {
-                    // Don't replace if already inside a link
+                html = html.replace(pattern, (match, offset, string) => {
+                    // Don't replace if already inside a link or header tag
+                    const beforeMatch = string.substring(Math.max(0, offset - 50), offset);
+                    const afterMatch = string.substring(offset + match.length, Math.min(string.length, offset + match.length + 50));
+                    
+                    // Skip if inside HTML tags, especially headers
+                    if (beforeMatch.includes('<a') && !beforeMatch.includes('</a>')) return match;
+                    if (beforeMatch.includes('<h') && !afterMatch.includes('</h')) return match;
                     if (match.includes('<a') || match.includes('</a>')) return match;
                     
                     return `<a href="#" onclick="toggleNavGroup('${section}')" class="section-link text-blue-600 hover:text-blue-800 underline transition-colors">${match}</a>`;
@@ -598,9 +561,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash.replace('#', '');
     if (hash && ['overview', 'architecture', 'frontend', 'backend', 'database', 'userflows', 'deployment', 'troubleshooting'].includes(hash)) {
         // Small delay to ensure server is ready
-        setTimeout(() => toggleNavGroup(hash), 100);
+        setTimeout(() => loadSection(hash), 100);
     } else {
         // Small delay to ensure server is ready
-        setTimeout(() => toggleNavGroup('overview'), 100);
+        setTimeout(() => loadSection('overview'), 100);
     }
 });

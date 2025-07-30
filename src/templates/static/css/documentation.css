@@ -1,51 +1,17 @@
 /* Custom Documentation Styles */
 
-/* Cascading Navigation */
+/* Simplified Navigation */
 .nav-container {
     @apply flex flex-col;
 }
 
-.nav-group {
-    @apply border-b border-gray-100 last:border-b-0;
-}
-
-.nav-group-header {
-    @apply w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between;
-}
-
-.nav-group-header.active {
-    @apply bg-blue-100 text-blue-700;
-}
-
-.nav-chevron {
-    @apply text-gray-400 transition-transform duration-200;
-}
-
-.nav-group-header.expanded .nav-chevron {
-    transform: rotate(90deg);
-}
-
-.nav-subsection {
-    @apply bg-gray-50 overflow-hidden transition-all duration-300 ease-in-out;
-}
-
-.nav-subsection.hidden {
-    max-height: 0;
-    opacity: 0;
-}
-
-.nav-subsection:not(.hidden) {
-    max-height: 500px;
-    opacity: 1;
-}
-
 .nav-item {
-    @apply w-full text-left px-8 py-2 text-sm hover:bg-blue-100 hover:text-blue-700 transition-colors;
+    @apply w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center border-b border-gray-100;
 }
 
 .nav-item.active {
-    @apply bg-blue-200 text-blue-800;
-    border-left: 3px solid #3b82f6;
+    @apply bg-blue-100 text-blue-700 font-medium;
+    border-left: 4px solid #3b82f6;
 }
 
 .nav-toc {

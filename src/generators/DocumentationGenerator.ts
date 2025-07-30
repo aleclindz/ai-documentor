@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import { CodebaseAnalysis, FileInfo, FunctionInfo, ComponentInfo, RouteInfo } from '../analyzers/CodebaseAnalyzer.js';
 import { Config } from '../utils/Config.js';
 import { MermaidGenerator } from './MermaidGenerator.js';
+import { WorkflowGeneratorFactory } from './workflows/index.js';
 import { slug } from '../utils/slug.js';
 
 export interface GeneratedDocumentation {
@@ -124,7 +125,7 @@ export interface UserFlow {
   slug: string;
   description: string;
   steps: UserFlowStep[];
-  diagram: string;
+  diagram?: string;
 }
 
 export interface UserFlowStep {
@@ -162,6 +163,7 @@ export class DocumentationGenerator {
   private openai: OpenAI;
   private config: any;
   private mermaidGenerator: MermaidGenerator;
+  private workflowFactory: WorkflowGeneratorFactory;
 
   constructor(config: any) {
     this.config = config;
@@ -169,6 +171,10 @@ export class DocumentationGenerator {
       apiKey: config.openaiApiKey
     });
     this.mermaidGenerator = new MermaidGenerator();
+    this.workflowFactory = new WorkflowGeneratorFactory({
+      openaiApiKey: config.openaiApiKey,
+      debug: config.debug
+    });
   }
 
   async generate(analysis: CodebaseAnalysis, progressCallback?: (status: string) => void): Promise<GeneratedDocumentation> {
@@ -553,188 +559,16 @@ Format as detailed Markdown documentation.
   }
 
   private async generateUserWorkflows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
-    // For CLI tools, generate user workflow documentation instead of application user flows
-    if (analysis.relevantSections.cli) {
-      return await this.generateCLIUserWorkflows(analysis);
+    // Use the new workflow generator factory to determine the best generator
+    if (this.config.debug) {
+      const info = this.workflowFactory.getGeneratorInfo(analysis);
+      console.log(`🔄 Using ${info.name} workflow generator: ${info.reason}`);
     }
     
-    // For web applications, generate traditional user flows
-    return await this.generateApplicationUserFlows(analysis);
+    return await this.workflowFactory.generateWorkflows(analysis);
   }
 
-  private async generateCLIUserWorkflows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
-    const prompt = `
-# CLI User Workflow Documentation Generation
 
-Analyze this CLI tool and create structured user workflow documentation covering installation, setup, and usage patterns.
-
-## Project Analysis:
-**Package Name**: ${analysis.projectName}
-**Technology**: ${analysis.framework.join(', ')}
-**Dependencies**: ${Object.keys(analysis.dependencies).slice(0, 10).join(', ')}
-**Scripts**: ${Object.keys(analysis.scripts).join(', ')}
-**Binary**: ${analysis.dependencies.commander ? 'CLI tool with commander.js' : 'Node.js application'}
-
-## CLI Commands Detected:
-Based on the codebase analysis, this appears to be a CLI tool with these patterns:
-- Main executable commands
-- Command-line options and flags  
-- Configuration requirements
-- Output and interaction patterns
-
-Create user workflow documentation as JSON with this structure:
-
-{
-  "workflows": [
-    {
-      "name": "Installation & Setup",
-      "slug": "installation-setup",
-      "description": "Getting started with the CLI tool",
-      "steps": [
-        {
-          "action": "Install prerequisites",
-          "details": "Node.js version requirements, system dependencies",
-          "commands": ["node --version"],
-          "result": "System ready for installation"
-        },
-        {
-          "action": "Install the tool",
-          "details": "Global vs local installation options",
-          "commands": ["npm install -g ${analysis.projectName}"],
-          "result": "Tool available system-wide"
-        }
-      ]
-    },
-    {
-      "name": "Basic Usage",
-      "slug": "basic-usage", 
-      "description": "Common commands and workflows",
-      "steps": [
-        {
-          "action": "Run basic command",
-          "details": "Primary use cases and command patterns",
-          "commands": ["${analysis.projectName} --help"],
-          "result": "See available options"
-        }
-      ]
-    },
-    {
-      "name": "Configuration",
-      "slug": "configuration",
-      "description": "Setting up environment and config files",
-      "steps": [
-        {
-          "action": "Set up configuration",
-          "details": "Environment variables, config files, API keys",
-          "commands": ["create .env file", "add required variables"],
-          "result": "Tool configured and ready to use"
-        }
-      ]
-    }
-  ]
-}
-
-Return only the JSON structure with practical, actionable workflow steps for CLI users.
-`;
-
-    try {
-      const response = await this.callOpenAI(prompt);
-      const parsed = JSON.parse(response);
-      
-      // Convert to UserFlow format expected by the system
-      return parsed.workflows?.map((workflow: any) => ({
-        name: workflow.name,
-        slug: workflow.slug,
-        description: workflow.description,
-        steps: workflow.steps?.map((step: any) => ({
-          action: step.action,
-          component: 'CLI',
-          event: 'command',
-          apiEndpoint: step.commands?.join(', ') || '',
-          serviceFunction: 'CLI execution',
-          dbModel: '',
-          result: step.result
-        })) || []
-      })) || [];
-    } catch (error) {
-      console.error('Error generating CLI user workflows:', error);
-      return [];
-    }
-  }
-
-  private async generateApplicationUserFlows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
-    const prompt = `
-# User Flow Documentation Generation
-
-Based on this application analysis, create hyper-linked user flows with cross-references:
-
-**Frontend Components**: ${analysis.files.filter(f => f.components.length > 0).map(f => 
-  f.components.map(c => c.name).join(', ')
-).join(', ')}
-
-**API Endpoints**: ${analysis.files.flatMap(f => f.routes).map(r => `${r.method} ${r.path}`).join(', ')}
-
-**Interaction Links**: ${analysis.links.map(l => `${l.uiComponent}.${l.event} → ${l.apiEndpoint} → ${l.dbModel || 'DB'}`).join(', ')}
-
-Create 3-5 major user flows as structured JSON. Each flow should have:
-- **name**: Descriptive flow name
-- **slug**: URL-friendly identifier
-- **description**: What this flow accomplishes
-- **steps**: Array of detailed steps with cross-links
-
-Each step should include:
-- **action**: What the user does
-- **componentSlug**: The UI component involved (use kebab-case)
-- **event**: The interaction event (click, submit, etc.)
-- **apiSlug**: The API endpoint called (format: "method-path")
-- **serviceFunction**: Backend handler function name
-- **dbModel**: Database table/model affected
-- **result**: What happens next
-
-Format as: {"userFlows": [UserFlow objects]}
-
-Example structure:
-{
-  "userFlows": [
-    {
-      "name": "User Login",
-      "slug": "user-login", 
-      "description": "User authentication flow",
-      "steps": [
-        {
-          "action": "User clicks login button",
-          "componentSlug": "login-form",
-          "event": "click",
-          "apiSlug": "post-auth-login",
-          "serviceFunction": "handleLogin",
-          "dbModel": "users",
-          "result": "Redirect to dashboard"
-        }
-      ]
-    }
-  ]
-}
-`;
-
-    const response = await this.callOpenAI(prompt);
-
-    try {
-      const parsed = JSON.parse(response);
-      return parsed.userFlows || parsed || [];
-    } catch {
-      return [{
-        name: 'Main User Flow',
-        slug: slug('Main User Flow'),
-        description: 'Primary application workflow',
-        steps: [{
-          action: 'User interacts with application',
-          componentSlug: slug('Main component'),
-          result: 'Expected outcome'
-        }],
-        diagram: await this.mermaidGenerator.generateUserFlowDiagram('basic flow')
-      }];
-    }
-  }
 
   private async generateAPIDocumentation(analysis: CodebaseAnalysis): Promise<APIDocumentation[]> {
     const apiRoutes = analysis.files.flatMap(f => f.routes);
