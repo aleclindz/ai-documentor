@@ -7,6 +7,10 @@ Generate comprehensive, beautiful documentation for your projects using advanced
 [![npm version](https://badge.fury.io/js/ai-documentor.svg)](https://badge.fury.io/js/ai-documentor)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## NPM Package
+
+https://www.npmjs.com/package/ai-documentor
+
 ## ✨ Features
 
 - 🚀 **One Command Setup** - Just run `ai-documentor` (no flags needed)
