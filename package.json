@@ -1,8 +1,8 @@
 {
   "name": "ai-documentor",
   "version": "1.0.0",
-  "description": "Automated documentation generator for any codebase using LLMs",
-  "main": "dist/index.js",
+  "description": "AI-powered documentation generator that creates comprehensive docs for any codebase using OpenAI GPT-4",
+  "main": "dist/cli.js",
   "type": "module",
   "bin": {
     "ai-documentor": "dist/cli.js"
@@ -13,17 +13,40 @@
     "start": "node dist/cli.js",
     "watch": "tsc --watch",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "prepublishOnly": "npm run build",
+    "prepack": "npm run build"
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
   "keywords": [
     "documentation",
-    "llm",
+    "ai",
+    "openai",
+    "gpt-4",
     "code-analysis",
+    "automatic-documentation",
+    "developer-tools",
+    "cli",
     "mermaid",
-    "developer-tools"
+    "markdown",
+    "typescript",
+    "javascript"
   ],
-  "author": "Alec Lindsay",
+  "author": "Alec Lindsay <aleclindsay@example.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aleclindz/ai-documentor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aleclindz/ai-documentor/issues"
+  },
+  "homepage": "https://github.com/aleclindz/ai-documentor#readme",
   "dependencies": {
     "@babel/parser": "^7.23.6",
     "@babel/preset-env": "^7.28.0",

@@ -1,0 +1,55 @@
+# Source files
+src/
+tsconfig.json
+.gitignore
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+tests/
+*.test.*
+*.spec.*
+coverage/
+.nyc_output/
+jest.config.*
+
+# Development dependencies
+node_modules/
+
+# Environment and config
+.env*
+.documentor.json
+
+# Generated docs (example output)
+docs/
+documentation/
+
+# Build artifacts
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Evaluation files
+evals/
+
+# Git
+.git/
+.github/
+
+# Temporary files
+.tmp/
+temp/
+
+# Documentation examples (keep README.md)
+examples/
+demo/
