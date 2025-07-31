@@ -75,6 +75,22 @@ export abstract class BaseWorkflowGenerator {
       .trim();
   }
 
+  protected cleanJSONResponse(response: string): string {
+    // Remove markdown code blocks if present
+    let cleaned = response.trim();
+    
+    // Remove opening ```json or ``` 
+    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/i, '');
+    
+    // Remove closing ```
+    cleaned = cleaned.replace(/\n?```\s*$/i, '');
+    
+    // Remove any leading/trailing whitespace
+    cleaned = cleaned.trim();
+    
+    return cleaned;
+  }
+
   protected log(message: string): void {
     if (this.config.debug) {
       console.log(message);

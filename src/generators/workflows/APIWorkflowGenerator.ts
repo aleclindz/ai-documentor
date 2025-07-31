@@ -43,7 +43,8 @@ export class APIWorkflowGenerator extends BaseWorkflowGenerator {
     
     try {
       const response = await this.callOpenAI(prompt);
-      const parsed = JSON.parse(response);
+      const cleanedResponse = this.cleanJSONResponse(response);
+      const parsed = JSON.parse(cleanedResponse);
       
       // Convert API workflows to standard UserFlow format
       return parsed.workflows?.map((workflow: any) => ({

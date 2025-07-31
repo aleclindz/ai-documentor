@@ -179,7 +179,9 @@ export class DocumentationGenerator {
 
   async generate(analysis: CodebaseAnalysis, progressCallback?: (status: string) => void): Promise<GeneratedDocumentation> {
     progressCallback?.('📋 Generating project overview...');
+    console.log(`🔍 Project analysis: ${analysis.files.length} files, frameworks: ${analysis.framework.join(', ')}`);
     const overview = await this.generateOverview(analysis);
+    console.log('✅ Project overview generated successfully');
     
     // Only generate sections that are relevant to this codebase
     let frontend, backend, database, userFlows, apiDocumentation, deploymentGuide;
@@ -999,28 +1001,45 @@ Navigate by clicking on any linked component, API, or database reference to jump
 `;
   }
 
-  private async callOpenAI(prompt: string): Promise<string> {
+  private async callOpenAI(prompt: string, timeoutMs: number = 60000): Promise<string> {
     try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert technical writer and software architect. Create comprehensive, accurate, and well-structured documentation. Focus on practical details that help developers understand and work with the codebase. Use clear, professional language and include specific technical details where relevant.`
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 4000,
-        temperature: 0.3
+      console.log('🤖 Making OpenAI API call...');
+      
+      // Create timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error(`OpenAI API call timed out after ${timeoutMs}ms`)), timeoutMs);
       });
 
+      // Race between API call and timeout
+      const response = await Promise.race([
+        this.openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert technical writer and software architect. Create comprehensive, accurate, and well-structured documentation. Focus on practical details that help developers understand and work with the codebase. Use clear, professional language and include specific technical details where relevant.`
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 4000,
+          temperature: 0.3
+        }),
+        timeoutPromise
+      ]);
+
+      console.log('✅ OpenAI API call completed successfully');
       return response.choices[0]?.message?.content || 'Documentation generation failed';
     } catch (error) {
-      console.error('OpenAI API Error:', error);
-      return `Error generating documentation: ${error}`;
+      console.error('❌ OpenAI API Error:', error);
+      
+      if (error instanceof Error && error.message.includes('timed out')) {
+        return `# Documentation Generation Timeout\n\nThe AI documentation generation timed out after ${timeoutMs/1000} seconds. This may be due to:\n- Network connectivity issues\n- OpenAI API rate limits\n- Large prompt size\n\nTry again with a smaller project or check your internet connection.`;
+      }
+      
+      return `# Documentation Generation Error\n\nError: ${error}\n\nPlease check your OpenAI API key and network connection.`;
     }
   }
 }

@@ -69,7 +69,8 @@ export class PageBasedWorkflowGenerator extends BaseWorkflowGenerator {
     
     try {
       const response = await this.callOpenAI(prompt);
-      const parsed = JSON.parse(response);
+      const cleanedResponse = this.cleanJSONResponse(response);
+      const parsed = JSON.parse(cleanedResponse);
       
       // Convert page flows to standard UserFlow format
       return this.convertPageFlowsToUserFlows(parsed.pageFlows || []);
@@ -281,6 +282,7 @@ Return only the JSON structure.
       }))
     }));
   }
+
 
   private generateFallbackPageFlows(analysis: CodebaseAnalysis): UserFlow[] {
     return [

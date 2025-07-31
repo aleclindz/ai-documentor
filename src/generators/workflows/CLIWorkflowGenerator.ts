@@ -59,7 +59,8 @@ export class CLIWorkflowGenerator extends BaseWorkflowGenerator {
     
     try {
       const response = await this.callOpenAI(prompt);
-      const parsed = JSON.parse(response);
+      const cleanedResponse = this.cleanJSONResponse(response);
+      const parsed = JSON.parse(cleanedResponse);
       
       // Convert to UserFlow format expected by the system
       return parsed.workflows?.map((workflow: any) => ({
