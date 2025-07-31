@@ -285,7 +285,13 @@ export class CodebaseAnalyzer {
       '**/*.d.ts', // Skip TypeScript definition files that cause parsing issues
       'coverage/**',
       '.nyc_output/**',
-      'docs.backup*/**'
+      'docs.backup*/**',
+      'scripts/**', // Skip script files that often have syntax issues
+      '**/vendor/**',
+      '**/*.bundle.js',
+      'html/**', // Skip HTML directories that might contain non-JS files
+      '**/public/**', // Skip public/static directories
+      '**/static/**'
     ];
 
     const files: string[] = [];
@@ -303,17 +309,63 @@ export class CodebaseAnalyzer {
 
   private async analyzeFile(filePath: string): Promise<FileInfo> {
     const relativePath = relative(this.rootPath, filePath);
-    const stats = statSync(filePath);
-    const content = readFileSync(filePath, 'utf-8');
-    const fileType = this.getFileType(filePath);
+    
+    try {
+      const stats = statSync(filePath);
+      
+      // Skip directories
+      if (stats.isDirectory()) {
+        throw new Error(`Skipping directory: ${filePath}`);
+      }
+      
+      const content = readFileSync(filePath, 'utf-8');
+      const fileType = this.getFileType(filePath);
 
-    const analysis: FileInfo = {
+      const analysis: FileInfo = {
+        path: filePath,
+        relativePath,
+        type: fileType,
+        size: stats.size,
+        lastModified: stats.mtime,
+        content,
+        dependencies: [],
+        exports: [],
+        functions: [],
+        classes: [],
+        components: [],
+        routes: [],
+        databaseQueries: [],
+        links: []
+      };
+
+      if (fileType === FileType.TypeScript || fileType === FileType.JavaScript || fileType === FileType.React) {
+        await this.analyzeJSFile(analysis);
+      } else if (fileType === FileType.JSON) {
+        this.analyzeJsonFile(analysis);
+      }
+
+      return analysis;
+    } catch (error) {
+      // Handle file read errors (directories, permission issues, etc.)
+      if (error instanceof Error && (error.message.includes('EISDIR') || error.message.includes('Skipping directory'))) {
+        // Silently skip directories
+        return this.createEmptyFileInfo(filePath, relativePath);
+      }
+      
+      // For other errors, log and return empty file info
+      console.warn(`Failed to analyze ${relativePath}:`, error instanceof Error ? error.message : error);
+      return this.createEmptyFileInfo(filePath, relativePath);
+    }
+  }
+
+  private createEmptyFileInfo(filePath: string, relativePath: string): FileInfo {
+    return {
       path: filePath,
       relativePath,
-      type: fileType,
-      size: stats.size,
-      lastModified: stats.mtime,
-      content,
+      type: FileType.Unknown,
+      size: 0,
+      lastModified: new Date(),
+      content: '',
       dependencies: [],
       exports: [],
       functions: [],
@@ -323,22 +375,39 @@ export class CodebaseAnalyzer {
       databaseQueries: [],
       links: []
     };
-
-    if (fileType === FileType.TypeScript || fileType === FileType.JavaScript || fileType === FileType.React) {
-      await this.analyzeJSFile(analysis);
-    } else if (fileType === FileType.JSON) {
-      this.analyzeJsonFile(analysis);
-    }
-
-    return analysis;
   }
 
   private async analyzeJSFile(fileInfo: FileInfo): Promise<void> {
     try {
-      const ast = parse(fileInfo.content, {
-        sourceType: 'module',
-        plugins: ['typescript', 'jsx', 'decorators-legacy']
-      });
+      // Try multiple parsing strategies for different file types
+      let ast;
+      const plugins: any[] = ['typescript', 'jsx', 'decorators-legacy'];
+      
+      try {
+        // First try as module
+        ast = parse(fileInfo.content, {
+          sourceType: 'module',
+          plugins
+        });
+      } catch (moduleError) {
+        try {
+          // If that fails, try as script
+          ast = parse(fileInfo.content, {
+            sourceType: 'script',
+            plugins
+          });
+        } catch (scriptError) {
+          // If still failing, try with loose parsing
+          ast = parse(fileInfo.content, {
+            sourceType: 'unambiguous',
+            plugins: [...plugins, 'asyncGenerators', 'bigInt', 'classProperties', 'dynamicImport'] as any[],
+            allowImportExportEverywhere: true,
+            allowAwaitOutsideFunction: true,
+            allowReturnOutsideFunction: true,
+            strictMode: false
+          });
+        }
+      }
 
       (traverse as any).default(ast, {
         ImportDeclaration: (path) => {
@@ -453,9 +522,15 @@ export class CodebaseAnalyzer {
         }
       });
     } catch (error) {
-      // Skip parsing errors for TypeScript definition files and external dependencies
-      if (!fileInfo.relativePath.includes('node_modules') && !fileInfo.relativePath.endsWith('.d.ts')) {
-        console.warn(`Failed to parse ${fileInfo.relativePath}:`, error);
+      // Skip parsing errors for TypeScript definition files, external dependencies, and problematic files
+      const shouldSkip = fileInfo.relativePath.includes('node_modules') || 
+                        fileInfo.relativePath.endsWith('.d.ts') ||
+                        fileInfo.relativePath.includes('scripts/') ||
+                        fileInfo.relativePath.includes('.min.js') ||
+                        fileInfo.relativePath.includes('vendor/');
+      
+      if (!shouldSkip) {
+        console.warn(`Failed to parse ${fileInfo.relativePath}: ${error instanceof Error ? error.message : error}`);
       }
     }
   }
