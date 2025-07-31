@@ -234,8 +234,18 @@ export class WorkflowGeneratorFactory {
     const isWebApp = webAppIndicators.some(indicator => indicator);
     evidence['Web App Indicators'] = webAppIndicators;
     
-    if (isWebApp && (hasCLIDependencies || hasCliScripts || hasCliFiles)) {
-      reasons.push('⚠️  WARNING: Project has both CLI and web app patterns - web app likely takes precedence');
+    // Strong preference for web apps - only allow CLI if it's clearly a CLI-first project
+    if (isWebApp) {
+      if (hasCLIDependencies && !hasCliScripts && !hasCliFiles) {
+        reasons.push('⚠️  WARNING: Has CLI deps but this is clearly a web app - CLI should NOT handle this');
+      } else if (hasCliScripts || hasCliFiles) {
+        reasons.push('⚠️  WARNING: Has CLI scripts but this is clearly a web app - CLI should NOT handle this');
+      }
+      
+      // For web apps, CLI should NOT handle even if it has CLI-like patterns
+      const canHandle = false;
+      reasons.push('🚫 BLOCKED: This is a web application - CLI generator should not handle web apps');
+      return { canHandle, reasons, evidence };
     }
 
     const canHandle = hasCLIDependencies || hasBinField || hasCliScripts || hasCliFiles;

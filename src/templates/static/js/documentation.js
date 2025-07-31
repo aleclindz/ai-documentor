@@ -205,30 +205,34 @@ class DocumentationViewer {
     }
 
     addAnchorLinks(html) {
-        // More robust anchor link handling - preserve original content structure
-        return html.replace(/<h([1-3])([^>]*)>(.*?)<\/h[1-3]>/gs, (match, level, attrs, content) => {
-            // Skip if already has an ID
-            if (attrs.includes('id=')) {
-                return match;
-            }
+        // Completely rewrite anchor link processing to handle malformed headers
+        return html.replace(/<h([1-3])([^>]*?)>(.*?)<\/h[1-3]>/gs, (match, level, attrs, content) => {
+            // Clean up any existing malformed attributes in the content
+            let cleanContent = content;
             
-            // Skip if already has anchor link
-            if (content.includes('anchor-link') || content.includes('class="anchor-link"')) {
-                return match;
-            }
+            // Remove any malformed id attributes that ended up in the content
+            cleanContent = cleanContent.replace(/^[^"]*"[^>]*">\s*/, '');
+            cleanContent = cleanContent.replace(/^[^"]*">\s*/, '');
             
-            // Extract clean text content for ID generation
-            const text = content.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim();
+            // Remove any existing anchor links
+            cleanContent = cleanContent.replace(/<a[^>]*class="anchor-link"[^>]*>.*?<\/a>/g, '');
+            
+            // Extract pure text content for ID generation
+            const textContent = cleanContent.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '').trim();
             
             // Skip if no meaningful text content
-            if (!text || text.length < 2) {
+            if (!textContent || textContent.length < 2) {
                 return match;
             }
             
-            const id = this.generateId(text);
+            // Generate clean ID from text content
+            const cleanId = this.generateId(textContent);
             
-            // Preserve original content structure and just add ID to header
-            return `<h${level} id="${id}"${attrs}>${content}<a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline ml-2" aria-hidden="true">#</a></h${level}>`;
+            // Clean up existing attributes - remove any malformed id attributes
+            let cleanAttrs = attrs.replace(/\s*id="[^"]*"/g, '');
+            
+            // Build clean header with proper ID and anchor link
+            return `<h${level} id="${cleanId}"${cleanAttrs}>${textContent}<a href="#${cleanId}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline ml-2" aria-hidden="true">#</a></h${level}>`;
         });
     }
 
