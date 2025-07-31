@@ -13,6 +13,8 @@ import { slug } from '../utils/slug.js';
 
 export interface GeneratedDocumentation {
   overview: string;
+  gettingStarted?: string;
+  userGuide?: string;
   frontend: FrontendDocumentation;
   backend: BackendDocumentation;
   database: DatabaseDocumentation;
@@ -223,8 +225,18 @@ export class DocumentationGenerator {
     progressCallback?.('🔧 Creating troubleshooting guide...');
     const troubleshooting = await this.generateTroubleshooting(analysis);
 
+    // Generate Getting Started guide
+    progressCallback?.('🚀 Creating getting started guide...');
+    const gettingStarted = await this.generateGettingStartedGuide(analysis);
+
+    // Generate User Guide
+    progressCallback?.('📖 Creating comprehensive user guide...');
+    const userGuide = await this.generateUserGuide(analysis, frontend);
+
     const documentation: GeneratedDocumentation = {
       overview,
+      gettingStarted,
+      userGuide,
       frontend,
       backend,
       database,
@@ -628,27 +640,97 @@ Format as detailed Markdown documentation.
     
     if (apiRoutes.length === 0) return [];
 
+    // Group routes by functionality for better organization
+    const routesByFunction = this.groupRoutesByFunction(apiRoutes);
+    
     const prompt = `
-# API Documentation Generation
+# Enhanced API Documentation Generation
 
-Create OpenAPI-style documentation for these endpoints:
+Create comprehensive API documentation with examples and cross-references for this ${analysis.framework.join(', ')} application.
 
-${apiRoutes.map(route => `
-**${route.method} ${route.path}**
-- Handler: ${route.handler}
-- Middleware: ${route.middleware.join(', ')}
-- Parameters: ${route.params.join(', ')}
+## Application Context
+- **Project**: ${analysis.projectName}
+- **Framework**: ${analysis.framework.join(', ')}
+- **Authentication**: ${this.detectAuthPatterns(analysis)}
+- **Database**: ${this.detectDatabasePatterns(analysis)}
+
+## API Routes Detected (${apiRoutes.length} endpoints)
+${Object.entries(routesByFunction).map(([category, routes]) => `
+### ${category}
+${routes.map((route: any) => `
+- **${route.method} ${route.path}**  
+  Handler: \`${route.handler}\`  
+  Middleware: ${route.middleware.length > 0 ? route.middleware.join(', ') : 'None'}  
+  File: \`${route.filePath || 'Unknown'}\`
+`).join('')}
 `).join('\n')}
 
-For each endpoint, provide:
-1. **Purpose**: What this endpoint does
-2. **Authentication**: Required auth (if any)
-3. **Parameters**: Query params, path params, body
-4. **Request Examples**: Sample requests
-5. **Response Examples**: Success and error responses
-6. **Error Codes**: Possible HTTP status codes
+Create API documentation with the following enhanced structure for EACH endpoint:
 
-Format as structured JSON matching the APIDocumentation interface.
+## Overview
+Brief description of the API architecture and authentication approach.
+
+${apiRoutes.map(route => `
+## ${route.method.toUpperCase()} ${route.path}
+
+**Description**: [What this endpoint does and why users would call it]
+
+**Authentication**: [Required authentication - API key, Bearer token, session, or none]
+
+**Parameters**:
+\`\`\`typescript
+// Path Parameters
+${route.params.length > 0 ? route.params.map(p => `${p}: string // Description of ${p}`).join('\n') : '// None'}
+
+// Query Parameters  
+// [List any query parameters]
+
+// Request Body (if applicable)
+interface RequestBody {
+  // Define the expected request structure
+}
+\`\`\`
+
+**Example Request**:
+\`\`\`bash
+curl -X ${route.method.toUpperCase()} "${analysis.projectName || 'localhost:3000'}${route.path}" \\
+  -H "Content-Type: application/json" \\
+  ${this.detectAuthPatterns(analysis) ? `-H "Authorization: Bearer YOUR_TOKEN" \\` : ''}
+  ${route.method !== 'GET' ? `-d '{"example": "data"}'` : ''}
+\`\`\`
+
+**Response Examples**:
+\`\`\`json
+// Success (200)
+{
+  "success": true,
+  "data": {
+    // Response structure based on endpoint purpose
+  }
+}
+
+// Error (400/401/404/500)
+{
+  "error": "Error message",  
+  "details": "Additional error context"
+}
+\`\`\`
+
+**Related Components**: [Link to frontend components that call this API]
+
+---
+`).join('\n')}
+
+Focus on:
+1. Real, practical examples that developers can copy-paste
+2. Clear explanation of what each endpoint does from a user perspective
+3. Proper error handling documentation
+4. Cross-references to frontend components that use each API
+5. Authentication requirements clearly stated
+6. Request/response schemas that match the actual application structure
+
+Make this documentation that a developer could use to integrate with the API immediately.
+Use the actual detected routes and patterns from the codebase analysis.
 `;
 
     const response = await this.callOpenAI(prompt);
@@ -657,21 +739,29 @@ Format as structured JSON matching the APIDocumentation interface.
       const parsed = JSON.parse(response);
       return parsed.apis || parsed || [];
     } catch {
+      // Enhanced fallback with better structure
       return apiRoutes.map(route => ({
         endpoint: route.path,
         method: route.method,
-        description: `${route.method} endpoint for ${route.path}`,
+        description: this.generateEndpointDescription(route),
         parameters: route.params.map(p => ({
           name: p,
           type: 'string',
           required: true,
-          description: `${p} parameter`
+          description: `${p} parameter for ${route.path}`
         })),
-        responses: [{
-          status: 200,
-          description: 'Success',
-          schema: 'JSON response'
-        }],
+        responses: [
+          {
+            status: 200,
+            description: 'Success',
+            schema: '{"success": true, "data": {}}'
+          },
+          {
+            status: 400,
+            description: 'Bad Request',
+            schema: '{"error": "Invalid parameters"}'
+          }
+        ],
         examples: [{
           title: 'Basic Usage',
           request: `${route.method} ${route.path}`,
@@ -859,6 +949,14 @@ Format as organized Markdown with clear sections and code examples.
     // Save each section as markdown files (only if they exist)
     writeFileSync(join(outputDir, 'overview.md'), documentation.overview);
     
+    if (documentation.gettingStarted) {
+      writeFileSync(join(outputDir, 'getting-started.md'), documentation.gettingStarted);
+    }
+    
+    if (documentation.userGuide) {
+      writeFileSync(join(outputDir, 'user-guide.md'), documentation.userGuide);
+    }
+    
     if (documentation.frontend) {
       writeFileSync(join(outputDir, 'frontend.md'), this.formatFrontendDocs(documentation.frontend));
     }
@@ -986,59 +1084,63 @@ ${flow.steps.map((step, i) => `${i + 1}. **${step.action}**
   }
 
   private generateNavigationReadme(documentation: GeneratedDocumentation): string {
-    let quickStartItems: string[] = [];
+    const projectName = documentation.overview.match(/# (.*)/)?.[1] || 'Project Documentation';
     
-    // Only include sections that were actually generated
-    if (documentation.userFlows && documentation.userFlows.length > 0) {
-      quickStartItems.push(`1. **User Workflows** – understand how to use this application
-${documentation.userFlows.map(f => `     - [${f.name}](user-flows.md#${f.slug})`).join('\n')}`);
-    }
-    
-    let sectionNumber = documentation.userFlows && documentation.userFlows.length > 0 ? 2 : 1;
-    
-    if (documentation.frontend) {
-      quickStartItems.push(`${sectionNumber++}. **Frontend** – user interface components and interactions
-   - [Frontend Documentation](frontend.md)`);
-    }
-    
-    if (documentation.backend) {
-      quickStartItems.push(`${sectionNumber++}. **Backend** – server-side APIs and business logic  
-   - [Backend Documentation](backend.md)`);
-    }
-    
-    if (documentation.database) {
-      quickStartItems.push(`${sectionNumber++}. **Database** – data storage and schema
-   - [Database Documentation](database.md)`);
-    }
-    
-    return `# Project Documentation
+    return `# ${projectName}
 
-> Regenerate docs anytime with \`ai-documentor\`.
-> View in your browser with \`ai-documentor view\`.
+> **${projectName}** - ${this.extractProjectDescription(documentation.overview)}
 
-## 🚀 Quick Start
+## 🚀 Quick Navigation
 
-${quickStartItems.join('\n\n')}
+### For Users
+${documentation.userGuide ? `- [**User Guide**](user-guide.md) - Complete guide to using ${projectName}` : ''}
+${documentation.gettingStarted ? `- [**Getting Started**](getting-started.md) - Setup and first steps` : ''}
+${documentation.userFlows && documentation.userFlows.length > 0 ? `- [**User Workflows**](user-flows.md) - Step-by-step task guides` : ''}
 
-${documentation.apiDocumentation ? `${sectionNumber++}. **API Reference** – detailed endpoint documentation
-   - [API Documentation](api.md)
+### For Developers
+${documentation.apiDocumentation ? `- [**API Reference**](api.md) - Complete API documentation` : ''}
+${documentation.database ? `- [**Database Schema**](database.md) - Data structure and relationships` : ''}
+- [**Architecture Overview**](architecture.md) - System design and components
+${documentation.frontend ? `- [**Frontend Guide**](frontend.md) - UI components and pages` : ''}
+${documentation.backend ? `- [**Backend Services**](backend.md) - Server-side functionality` : ''}
 
-` : ''}${sectionNumber++}. **Architecture** – system design and component relationships
-   - [Architecture Diagram](architecture.md)
+### Reference
+- [**Troubleshooting**](troubleshooting.md) - Common issues and solutions
+${documentation.deploymentGuide ? `- [**Deployment**](deployment.md) - Production deployment guide` : ''}
 
-${documentation.deploymentGuide ? `${sectionNumber++}. **Deployment** – how to deploy and run the application
-   - [Deployment Guide](deployment.md)
+## 📖 Documentation Overview
 
-` : ''}${sectionNumber++}. **Troubleshooting** – common issues and solutions
-   - [Troubleshooting Guide](troubleshooting.md)
+This documentation is organized around user workflows and developer needs:
 
-## 📖 CLI Commands
+### User-Focused Documentation
+- **Pages & Features** - What users see and can do on each page
+- **Workflows** - Step-by-step guides for common tasks  
+- **Feature Explanations** - How each feature works from the user's perspective
+
+### Developer-Focused Documentation
+- **API Endpoints** - Complete request/response documentation with examples
+- **Component Architecture** - How UI components interact with backend services
+- **Database Operations** - Table structures and data flow
+- **Integration Guides** - External service connections and configurations
+
+## 🔗 Cross-Reference System
+
+This documentation includes extensive cross-linking between:
+- User actions → UI components → API endpoints → Database operations
+- Frontend features → Backend services → Data storage
+- User workflows → Technical implementation → Database queries
+
+Navigate by clicking on any linked component, API, or database reference to jump directly to its documentation.
+
+## 📝 Key Features Documented
+
+${this.generateFeaturesList(documentation)}
+
+## 🛠️ CLI Commands
 
 - \`ai-documentor\` - Generate fresh documentation from your codebase
-- \`ai-documentor --force\` - Force regeneration even if docs exist  
-- \`ai-documentor view\` - Start local server to browse documentation
-- \`ai-documentor update\` - Update existing documentation
-- \`ai-documentor --help\` - Show all available options
+- \`ai-documentor view\` - Start documentation server and view in browser
+- \`ai-documentor --force\` - Regenerate without prompts
 
 ## 🔗 Cross-References
 
@@ -1050,6 +1152,260 @@ This documentation includes extensive cross-linking between:
 
 Navigate by clicking on any linked component, API, or database reference to jump directly to its documentation.
 `;
+  }
+
+  private async generateGettingStartedGuide(analysis: CodebaseAnalysis): Promise<string> {
+    const projectType = analysis.framework.includes('React') || analysis.framework.includes('Next.js') ? 'web application' : 
+                       analysis.framework.includes('Express') ? 'API service' : 'application';
+    
+    const hasAuth = analysis.files.some(f => 
+      f.content.includes('auth') || f.content.includes('login') || f.content.includes('session')
+    );
+    
+    const hasDashboard = analysis.files.some(f => 
+      f.relativePath.toLowerCase().includes('dashboard') || f.content.includes('dashboard')
+    );
+    
+    const prompt = `
+# Getting Started Guide Generation
+
+Create a comprehensive getting started guide for this ${projectType}:
+
+## Project Analysis
+- **Name**: ${analysis.projectName}
+- **Framework**: ${analysis.framework.join(', ')}
+- **Has Authentication**: ${hasAuth}
+- **Has Dashboard**: ${hasDashboard}
+- **Dependencies**: ${Object.keys(analysis.dependencies).slice(0, 10).join(', ')}
+
+## Key Files Detected
+${analysis.files.filter(f => 
+  f.relativePath.includes('page') || 
+  f.relativePath.includes('component') || 
+  f.relativePath.includes('api')
+).slice(0, 8).map(f => `- ${f.relativePath}: ${f.components.length} components, ${f.routes.length} routes`).join('\n')}
+
+Create a Getting Started guide with this structure:
+
+# Getting Started with ${analysis.projectName}
+
+## Welcome to [Project Name]
+Brief explanation of what this application does and who it's for.
+
+## 🚀 Quick Start (5 Minutes)
+Step-by-step instructions to get users up and running:
+${hasAuth ? `
+### 1. Create Your Account
+1. Visit the application
+2. Click **Sign Up**
+3. Enter email and password
+4. Verify account (if needed)
+
+### 2. First Login
+1. Sign in with credentials
+2. Complete any onboarding steps
+` : ''}
+${hasDashboard ? `
+### 3. Navigate to Dashboard
+1. Access your main dashboard
+2. Familiarize yourself with the interface
+3. Check available features
+` : ''}
+
+### ${hasAuth ? '4' : '3'}. Start Using Key Features
+Based on the detected components and pages, provide 2-3 most important first actions.
+
+## 📋 Detailed Setup Guide
+More comprehensive setup instructions including:
+- System requirements
+- Browser compatibility
+- Initial configuration steps
+- Common setup issues
+
+## 🎯 Next Steps
+Guide users to the most important features and documentation sections.
+
+Make this practical and actionable with specific steps users can follow immediately.
+Use friendly, encouraging language that reduces friction for new users.
+Focus on getting users to their first success quickly.
+`;
+
+    return await this.callOpenAI(prompt);
+  }
+
+  private async generateUserGuide(analysis: CodebaseAnalysis, frontend?: any): Promise<string> {
+    if (!frontend || !frontend.pages || frontend.pages.length === 0) {
+      return 'User guide not available - no frontend pages detected.';
+    }
+
+    const prompt = `
+# User Guide Generation
+
+Create a comprehensive user guide for this application organized by the pages users will interact with.
+
+## Application Analysis
+- **Project**: ${analysis.projectName}
+- **Framework**: ${analysis.framework.join(', ')}
+- **Pages Detected**: ${frontend.pages.length}
+
+## Page Information
+${frontend.pages.slice(0, 10).map((page: any) => `
+### ${page.name}
+- **Route**: ${page.route}
+- **Components**: ${page.components?.length || 0}
+- **Purpose**: ${page.purpose}
+- **Interactive Elements**: ${page.components?.filter((c: any) => ['button', 'link', 'form', 'input'].includes(c.type)).length || 0}
+`).join('\n')}
+
+Create a User Guide with this structure:
+
+# ${analysis.projectName} User Guide
+
+## Overview
+Brief explanation of what this application does and how it helps users.
+
+${frontend.pages.map((page: any) => `
+## 📄 ${page.name}
+
+### What You See
+Describe what users see when they visit this page.
+
+### What You Can Do
+List the specific actions users can take on this page:
+${page.components?.filter((c: any) => ['button', 'link', 'form', 'input'].includes(c.type)).map((c: any) => 
+  `- **${c.text || c.name}** - Interactive ${c.type} for user actions`
+).join('\n') || '- View information and navigate'}
+
+${page.navigationLinks?.length > 0 ? `
+### Navigation Options
+From this page, you can navigate to:
+${page.navigationLinks.map((link: string) => `- ${link}`).join('\n')}
+` : ''}
+
+**Related API**: [\`/api/[relevant-endpoint]\`](api-reference.md#endpoint-section)
+
+---
+`).join('\n')}
+
+For each page section, focus on:
+1. What users actually see on the page
+2. What actions they can perform
+3. What happens when they click buttons or fill forms
+4. Where they can go next
+
+Use clear, non-technical language that any user can understand.
+Make this a complete reference for how to use every part of the application.
+`;
+
+    return await this.callOpenAI(prompt);
+  }
+
+  private groupRoutesByFunction(routes: any[]): Record<string, any[]> {
+    const groups: Record<string, any[]> = {};
+    
+    routes.forEach(route => {
+      let category = 'General';
+      
+      if (route.path.includes('/auth')) category = 'Authentication';
+      else if (route.path.includes('/user') || route.path.includes('/account')) category = 'User Management';
+      else if (route.path.includes('/api/gsc')) category = 'Google Search Console';
+      else if (route.path.includes('/api/websites')) category = 'Website Management';
+      else if (route.path.includes('/api/content')) category = 'Content Management';
+      else if (route.path.includes('/api/subscription')) category = 'Subscriptions';
+      else if (route.path.includes('/api/cms')) category = 'CMS Integration';
+      else if (route.path.includes('/admin')) category = 'Administration';
+      
+      if (!groups[category]) groups[category] = [];
+      groups[category].push(route);
+    });
+    
+    return groups;
+  }
+
+  private detectAuthPatterns(analysis: CodebaseAnalysis): string {
+    const hasJWT = analysis.files.some(f => f.content.includes('jwt') || f.dependencies.includes('jsonwebtoken'));
+    const hasAuth0 = analysis.files.some(f => f.content.includes('auth0'));
+    const hasNextAuth = analysis.dependencies['next-auth'] !== undefined;
+    const hasSession = analysis.files.some(f => f.content.includes('session'));
+    
+    if (hasAuth0) return 'Auth0';
+    if (hasNextAuth) return 'NextAuth.js';
+    if (hasJWT) return 'JWT Bearer tokens';
+    if (hasSession) return 'Session-based';
+    return 'No authentication detected';
+  }
+
+  private detectDatabasePatterns(analysis: CodebaseAnalysis): string {
+    if (analysis.dependencies.mongodb || analysis.dependencies.mongoose) return 'MongoDB';
+    if (analysis.dependencies.pg || analysis.dependencies.postgresql) return 'PostgreSQL';
+    if (analysis.dependencies.mysql || analysis.dependencies.mysql2) return 'MySQL';
+    if (analysis.dependencies.sqlite || analysis.dependencies.sqlite3) return 'SQLite';
+    if (analysis.dependencies.prisma) return 'Prisma ORM';
+    if (analysis.dependencies.sequelize) return 'Sequelize ORM';
+    return 'Database not detected';
+  }
+
+  private generateEndpointDescription(route: any): string {
+    const method = route.method.toUpperCase();
+    const path = route.path;
+    
+    if (path.includes('/auth')) {
+      if (method === 'POST' && path.includes('/login')) return 'Authenticate user and return access token';
+      if (method === 'POST' && path.includes('/register')) return 'Register new user account';
+      if (method === 'POST' && path.includes('/logout')) return 'Log out user and invalidate session';
+    }
+    
+    if (path.includes('/user') || path.includes('/account')) {
+      if (method === 'GET') return 'Retrieve user account information';
+      if (method === 'PUT' || method === 'PATCH') return 'Update user account details';
+      if (method === 'DELETE') return 'Delete user account';
+    }
+    
+    if (path.includes('/websites')) {
+      if (method === 'GET') return 'List websites managed by the user';
+      if (method === 'POST') return 'Add new website to management';
+      if (method === 'DELETE') return 'Remove website from management';
+    }
+    
+    return `${method} endpoint for ${path}`;
+  }
+
+  private extractProjectDescription(overview: string): string {
+    // Try to extract the first paragraph after the title
+    const lines = overview.split('\n');
+    const titleIndex = lines.findIndex(line => line.startsWith('# '));
+    
+    if (titleIndex !== -1 && titleIndex + 2 < lines.length) {
+      const descriptionLine = lines[titleIndex + 2];
+      if (descriptionLine && descriptionLine.length > 20) {
+        return descriptionLine.substring(0, 100) + (descriptionLine.length > 100 ? '...' : '');
+      }
+    }
+    
+    return 'Automated documentation generated from codebase analysis';
+  }
+
+  private generateFeaturesList(documentation: GeneratedDocumentation): string {
+    const features: string[] = [];
+    
+    if (documentation.frontend?.pages && documentation.frontend.pages.length > 0) {
+      features.push(`### Frontend Features
+- **${documentation.frontend.pages.length} Pages** - Complete user interface documentation
+- **Interactive Components** - Buttons, forms, and user interactions mapped to backend services`);
+    }
+    
+    if (documentation.apiDocumentation && documentation.apiDocumentation.length > 0) {
+      features.push(`### API Features  
+- **${documentation.apiDocumentation.length} Endpoints** - Complete API reference with examples
+- **Authentication** - Security and access control documentation`);
+    }
+    
+    if (documentation.userFlows && documentation.userFlows.length > 0) {
+      features.push(`### User Workflows
+- **${documentation.userFlows.length} Workflows** - Step-by-step user journey documentation`);
+    }
+    
+    return features.join('\n\n');
   }
 
   private async callOpenAI(prompt: string, timeoutMs: number = 60000): Promise<string> {

@@ -128,11 +128,59 @@ class DocumentationViewer {
                 // Show subsections
                 subsections.classList.remove('hidden');
                 arrow.classList.add('rotate-180');
+                
+                // If this is the frontend section, populate individual pages
+                if (sectionName === 'frontend') {
+                    this.populateIndividualPages();
+                }
             } else {
                 // Hide subsections
                 subsections.classList.add('hidden');
                 arrow.classList.remove('rotate-180');
             }
+        }
+    }
+    
+    toggleNavSubsection(subsectionName) {
+        const subSubsections = document.getElementById(`${subsectionName}-subsections`);
+        const arrow = document.getElementById(`${subsectionName}-arrow`);
+        
+        if (subSubsections && arrow) {
+            if (subSubsections.classList.contains('hidden')) {
+                // Show sub-subsections
+                subSubsections.classList.remove('hidden');
+                arrow.classList.add('rotate-180');
+            } else {
+                // Hide sub-subsections
+                subSubsections.classList.add('hidden');
+                arrow.classList.remove('rotate-180');
+            }
+        }
+    }
+    
+    async populateIndividualPages() {
+        // Check if already populated
+        const pagesList = document.getElementById('individual-pages-list');
+        if (!pagesList || pagesList.children.length > 0) return;
+        
+        try {
+            const response = await fetch('/api/frontend-pages-list');
+            const data = await response.json();
+            
+            if (data.pages && data.pages.length > 0) {
+                data.pages.forEach(page => {
+                    const pageButton = document.createElement('button');
+                    pageButton.onclick = () => this.loadSection(`frontend-page-${page.slug}`);
+                    pageButton.className = 'nav-sub-subitem w-full text-left px-12 py-1.5 hover:bg-blue-50 transition-colors flex items-center text-xs';
+                    pageButton.innerHTML = `
+                        <span class="text-sm mr-2">📄</span>
+                        <span class="truncate">${page.name}</span>
+                    `;
+                    pagesList.appendChild(pageButton);
+                });
+            }
+        } catch (error) {
+            console.warn('Failed to load individual pages:', error);
         }
     }
 
@@ -645,6 +693,10 @@ function toggleNavSection(sectionName) {
     docViewer.toggleNavSection(sectionName);
 }
 
+function toggleNavSubsection(subsectionName) {
+    docViewer.toggleNavSubsection(subsectionName);
+}
+
 function scrollToSection(id) {
     docViewer.scrollToSection(id);
 }
@@ -662,12 +714,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash.replace('#', '');
     const validSections = ['overview', 'architecture', 'frontend', 'frontend-pages', 'frontend-components', 'backend', 'database', 'userflows', 'deployment', 'troubleshooting'];
     
-    if (hash && validSections.includes(hash)) {
+    if (hash && (validSections.includes(hash) || hash.startsWith('frontend-page-'))) {
         // Small delay to ensure server is ready
         setTimeout(() => {
             // If it's a frontend subsection, make sure the parent section is expanded
             if (hash.startsWith('frontend-')) {
                 toggleNavSection('frontend');
+                
+                // If it's an individual page, also expand the pages subsection
+                if (hash.startsWith('frontend-page-')) {
+                    setTimeout(() => toggleNavSubsection('frontend-pages'), 50);
+                }
             }
             loadSection(hash);
         }, 100);

@@ -1,6 +1,6 @@
 /* Custom Documentation Styles */
 
-/* Simplified Navigation */
+/* Cascading Navigation */
 .nav-container {
     @apply flex flex-col;
 }
@@ -12,6 +12,47 @@
 .nav-item.active {
     @apply bg-blue-100 text-blue-700 font-medium;
     border-left: 4px solid #3b82f6;
+}
+
+/* Second level navigation */
+.nav-subsections {
+    transition: all 0.3s ease;
+}
+
+.nav-subitem {
+    @apply w-full text-left px-8 py-2 hover:bg-blue-50 transition-colors flex items-center text-sm;
+}
+
+.nav-subitem.active {
+    @apply bg-blue-100 text-blue-700 font-medium;
+}
+
+/* Third level navigation */
+.nav-sub-subsections {
+    transition: all 0.3s ease;
+}
+
+.nav-sub-subitem {
+    @apply w-full text-left px-12 py-1.5 hover:bg-blue-50 transition-colors flex items-center text-xs;
+    border-left: 2px solid transparent;
+}
+
+.nav-sub-subitem:hover {
+    border-left-color: #60a5fa;
+}
+
+.nav-sub-subitem.active {
+    @apply bg-blue-100 text-blue-700 font-medium;
+    border-left-color: #3b82f6;
+}
+
+/* Navigation arrow animations */
+.nav-item svg, .nav-subitem svg {
+    transition: transform 0.2s ease;
+}
+
+.nav-item svg.rotate-180, .nav-subitem svg.rotate-180 {
+    transform: rotate(180deg);
 }
 
 .nav-toc {

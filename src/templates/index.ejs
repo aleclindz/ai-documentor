@@ -48,11 +48,32 @@
                             <span class="text-base mr-2">📋</span>
                             <span>Overview</span>
                         </button>
-                        <button onclick="loadSection('frontend-pages')" 
-                                class="nav-subitem w-full text-left px-8 py-2 hover:bg-blue-50 transition-colors flex items-center text-sm">
-                            <span class="text-base mr-2">📄</span>
-                            <span>Pages</span>
-                        </button>
+                        
+                        <!-- Pages subsection with third level -->
+                        <div class="nav-subgroup">
+                            <button onclick="toggleNavSubsection('frontend-pages')" 
+                                    class="nav-subitem w-full text-left px-8 py-2 hover:bg-blue-50 transition-colors flex items-center justify-between text-sm">
+                                <div class="flex items-center">
+                                    <span class="text-base mr-2">📄</span>
+                                    <span>Pages</span>
+                                </div>
+                                <svg id="frontend-pages-arrow" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="frontend-pages-subsections" class="nav-sub-subsections bg-gray-100 hidden">
+                                <button onclick="loadSection('frontend-pages')" 
+                                        class="nav-sub-subitem w-full text-left px-12 py-1.5 hover:bg-blue-50 transition-colors flex items-center text-xs">
+                                    <span class="text-sm mr-2">📋</span>
+                                    <span>All Pages</span>
+                                </button>
+                                <!-- Individual pages will be dynamically loaded here -->
+                                <div id="individual-pages-list">
+                                    <!-- Pages populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                        
                         <button onclick="loadSection('frontend-components')" 
                                 class="nav-subitem w-full text-left px-8 py-2 hover:bg-blue-50 transition-colors flex items-center text-sm">
                             <span class="text-base mr-2">🧩</span>

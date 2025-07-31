@@ -241,7 +241,7 @@ export class ReactPageAnalyzer {
     // Common component patterns
     if (tag.includes('button') || tag.includes('btn')) return 'button';
     if (tag.includes('modal') || tag.includes('dialog')) return 'modal';
-    if (tag.includes('card')) return 'card';
+    if (tag.includes('card') && this.hasInteractiveContent(node)) return 'card';
     if (tag.includes('nav') || tag.includes('menu')) return 'navigation';
     if (tag.includes('form')) return 'form';
     
@@ -252,14 +252,65 @@ export class ReactPageAnalyzer {
       attr.name.name === 'onClick'
     );
     
-    if (hasClickHandler) return 'button';
+    const hasHref = node.openingElement.attributes?.some((attr: any) => 
+      t.isJSXAttribute(attr) && 
+      t.isJSXIdentifier(attr.name) && 
+      attr.name.name === 'href'
+    );
     
-    // Ignore purely presentational elements
-    if (['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'section', 'article'].includes(tag)) {
+    const hasInteractiveProps = node.openingElement.attributes?.some((attr: any) => 
+      t.isJSXAttribute(attr) && 
+      t.isJSXIdentifier(attr.name) && 
+      ['onSubmit', 'onChange', 'onFocus', 'onBlur', 'onKeyDown', 'onKeyUp'].includes(attr.name.name)
+    );
+    
+    if (hasClickHandler || hasHref || hasInteractiveProps) return 'button';
+    
+    // Ignore purely presentational and technical elements
+    const ignoredElements = [
+      'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'section', 'article',
+      'svg', 'path', 'g', 'circle', 'rect', 'line', 'polygon', 'polyline', // SVG elements
+      'ul', 'ol', 'li', 'dl', 'dt', 'dd', // List elements
+      'table', 'thead', 'tbody', 'tr', 'td', 'th', // Table elements
+      'header', 'footer', 'main', 'aside', 'nav', // Semantic elements without interaction
+      'br', 'hr', 'meta', 'link', 'script', 'style', // Technical elements
+      'label', 'fieldset', 'legend' // Form structure elements without direct interaction
+    ];
+    
+    if (ignoredElements.includes(tag)) {
       return 'ignore';
     }
     
-    return 'other';
+    // Only include custom components that likely have interactive behavior
+    // Custom components (PascalCase) should be checked for interactive content
+    if (tag[0] === tag[0].toUpperCase() && this.hasInteractiveContent(node)) {
+      return 'other';
+    }
+    
+    return 'ignore';
+  }
+  
+  private hasInteractiveContent(node: any): boolean {
+    // Check if the component has interactive attributes or children
+    const hasInteractiveAttrs = node.openingElement.attributes?.some((attr: any) => 
+      t.isJSXAttribute(attr) && 
+      t.isJSXIdentifier(attr.name) && 
+      ['onClick', 'onSubmit', 'onChange', 'href', 'type', 'disabled', 'checked'].includes(attr.name.name)
+    );
+    
+    // Check if component has meaningful text content (not just whitespace)
+    const hasText = this.extractComponentText(node).trim().length > 0;
+    
+    // Check if it contains buttons, links, or forms as children
+    const hasInteractiveChildren = node.children?.some((child: any) => {
+      if (t.isJSXElement(child) && t.isJSXIdentifier(child.openingElement.name)) {
+        const childTag = child.openingElement.name.name.toLowerCase();
+        return ['button', 'a', 'input', 'select', 'textarea', 'form'].includes(childTag);
+      }
+      return false;
+    });
+    
+    return hasInteractiveAttrs || hasText || hasInteractiveChildren;
   }
 
   private extractComponentText(node: any): string {

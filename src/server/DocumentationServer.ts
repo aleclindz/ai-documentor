@@ -153,6 +153,70 @@ export class DocumentationServer {
       }
     });
 
+    // Frontend Pages List (for navigation population)
+    this.app.get('/api/frontend-pages-list', async (req, res) => {
+      await this.ensureDocumentation();
+      const frontend = this.documentation?.frontend;
+      if (!frontend || !frontend.pages || frontend.pages.length === 0) {
+        res.json({ pages: [] });
+      } else {
+        // Return simplified page data for navigation
+        const pages = frontend.pages.map((page: any) => ({
+          name: page.name,
+          slug: page.slug,
+          route: page.route
+        }));
+        res.json({ pages });
+      }
+    });
+
+    // Individual Frontend Page
+    this.app.get('/api/frontend-page-:slug', async (req, res) => {
+      await this.ensureDocumentation();
+      const slug = req.params.slug;
+      const frontend = this.documentation?.frontend;
+      
+      if (!frontend || !frontend.pages) {
+        res.json({ content: 'No pages available.' });
+        return;
+      }
+      
+      const page = frontend.pages.find((p: any) => p.slug === slug);
+      if (!page) {
+        res.json({ content: `Page with slug "${slug}" not found.` });
+        return;
+      }
+      
+      // Generate individual page markdown
+      let pageMarkdown = `# ${page.name}\n\n`;
+      pageMarkdown += `**Route**: \`${page.route}\`\n\n`;
+      pageMarkdown += `${page.purpose}\n\n`;
+      
+      if (page.components && page.components.length > 0) {
+        pageMarkdown += `## Components on this Page\n\n`;
+        pageMarkdown += `This page contains **${page.components.length}** components that users can interact with.\n\n`;
+      }
+      
+      if (page.componentsMarkdown) {
+        pageMarkdown += page.componentsMarkdown + '\n\n';
+      }
+      
+      if (page.navigationLinks && page.navigationLinks.length > 0) {
+        pageMarkdown += `## Navigation from this Page\n\n`;
+        pageMarkdown += `Users can navigate to the following pages from here:\n\n`;
+        page.navigationLinks.forEach((link: string) => {
+          pageMarkdown += `- ${link}\n`;
+        });
+        pageMarkdown += '\n';
+      }
+      
+      // Add back navigation
+      pageMarkdown += `---\n\n`;
+      pageMarkdown += `[← Back to All Pages](/api/frontend-pages) | [Frontend Overview](/api/frontend)\n`;
+      
+      res.json({ content: pageMarkdown });
+    });
+
     this.app.get('/api/backend', async (req, res) => {
       await this.ensureDocumentation();
       const content = this.documentation?.backend;
