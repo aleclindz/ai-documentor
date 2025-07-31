@@ -1,4 +1,5 @@
 import { BaseWorkflowGenerator, UserFlow } from './BaseWorkflowGenerator.js';
+import { PageBasedWorkflowGenerator } from './PageBasedWorkflowGenerator.js';
 import { CodebaseAnalysis } from '../../analyzers/CodebaseAnalyzer.js';
 
 export class WebAppWorkflowGenerator extends BaseWorkflowGenerator {
@@ -39,6 +40,15 @@ export class WebAppWorkflowGenerator extends BaseWorkflowGenerator {
   async generateWorkflows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {
     this.log('Generating Web Application workflows...');
 
+    // Use the new page-based generator for better structure
+    const pageBasedGenerator = new PageBasedWorkflowGenerator(this.config);
+    
+    if (pageBasedGenerator.canHandle(analysis)) {
+      this.log('Using page-based workflow generation...');
+      return await pageBasedGenerator.generateWorkflows(analysis);
+    }
+
+    // Fallback to original method if page-based doesn't work
     const prompt = this.buildWebAppPrompt(analysis);
     
     try {

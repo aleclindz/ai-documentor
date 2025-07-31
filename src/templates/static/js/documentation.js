@@ -381,34 +381,110 @@ class DocumentationViewer {
         let html = `
             <div class="prose prose-lg max-w-none">
                 <h1>🔄 User Flows</h1>
-                <p>These flows describe how users interact with the application and what happens behind the scenes.</p>
+                <p>Page-by-page breakdown of user interactions, showing what actions users can take and how they connect to backend functionality.</p>
+                
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-8">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-2">How to Navigate</h3>
+                    <ul class="text-blue-800 space-y-1 text-sm">
+                        <li><strong>Page Sections:</strong> Each section represents a user-facing page or view</li>
+                        <li><strong>Action Items:</strong> Blue buttons/links show user interactions</li>
+                        <li><strong>Backend Links:</strong> Click function names to see backend documentation</li>
+                        <li><strong>Database Operations:</strong> See what data is created, read, updated, or deleted</li>
+                    </ul>
+                </div>
         `;
         
         flows.forEach((flow, index) => {
             html += `
-                <div class="component-card">
-                    <h2>${flow.name}</h2>
-                    <p class="component-meta">${flow.description}</p>
+                <div class="page-flow-card bg-white border border-gray-200 rounded-lg p-6 mb-8 shadow-sm">
+                    <div class="flex items-center mb-4">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                            <span class="text-blue-600 font-semibold">${index + 1}</span>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900 m-0">${flow.name}</h2>
+                    </div>
                     
-                    ${flow.diagram ? `<div class="mermaid">${flow.diagram}</div>` : ''}
+                    <p class="text-gray-600 mb-6 text-lg">${flow.description}</p>
                     
-                    <h3>Steps:</h3>
-                    <ol class="space-y-2">
+                    ${flow.diagram ? `<div class="mermaid mb-6">${flow.diagram}</div>` : ''}
+                    
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">User Actions Available:</h3>
+                    
+                    <div class="space-y-4">
                         ${flow.steps ? flow.steps.map(step => `
-                            <li>
-                                <strong>${step.action}</strong>
-                                <div class="text-sm text-gray-600 mt-1">
-                                    Component: <code class="file-path">${step.component}</code>
-                                    ${step.backendCall ? `<br>API: <code>${step.backendCall}</code>` : ''}
-                                    ${step.databaseQuery ? `<br>Database: <code>${step.databaseQuery}</code>` : ''}
-                                    <br>Result: ${step.result}
+                            <div class="action-item bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                                        <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-gray-900 mb-2">${step.action}</h4>
+                                        
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                            <div>
+                                                <span class="font-medium text-gray-700">User Interaction:</span>
+                                                <div class="text-gray-600 mt-1">
+                                                    ${step.event ? `<span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-xs mr-2">${step.event}</span>` : ''}
+                                                    ${step.result}
+                                                </div>
+                                            </div>
+                                            
+                                            ${step.serviceFunction ? `
+                                            <div>
+                                                <span class="font-medium text-gray-700">Backend Function:</span>
+                                                <div class="text-gray-600 mt-1">
+                                                    <a href="#" onclick="loadSection('backend')" 
+                                                       class="inline-block bg-blue-100 text-blue-800 hover:bg-blue-200 px-2 py-1 rounded text-xs transition-colors">
+                                                        ${step.serviceFunction}
+                                                    </a>
+                                                    ${step.apiEndpoint ? `<div class="text-xs text-gray-500 mt-1">Endpoint: <code>${step.apiEndpoint}</code></div>` : ''}
+                                                </div>
+                                            </div>
+                                            ` : ''}
+                                        </div>
+                                        
+                                        ${step.dbModel ? `
+                                        <div class="mt-3 pt-3 border-t border-gray-200">
+                                            <span class="font-medium text-gray-700 text-sm">Database Impact:</span>
+                                            <div class="text-gray-600 mt-1">
+                                                <a href="#" onclick="loadSection('database')" 
+                                                   class="inline-block bg-purple-100 text-purple-800 hover:bg-purple-200 px-2 py-1 rounded text-xs transition-colors">
+                                                    ${step.dbModel} table
+                                                </a>
+                                            </div>
+                                        </div>
+                                        ` : ''}
+                                    </div>
                                 </div>
-                            </li>
-                        `).join('') : '<li>No detailed steps available</li>'}
-                    </ol>
+                            </div>
+                        `).join('') : '<div class="text-gray-500 text-center py-8">No user actions documented for this page</div>'}
+                    </div>
                 </div>
             `;
         });
+        
+        // Add cross-reference guide
+        html += `
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">🔗 Cross-Reference Guide</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <h4 class="font-medium text-blue-600 mb-2">Backend Functions</h4>
+                        <p class="text-gray-600">Click blue function badges to jump to the Backend section and see detailed implementation, parameters, and responses.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-purple-600 mb-2">Database Operations</h4>
+                        <p class="text-gray-600">Click purple database badges to view the Database section for table schemas, relationships, and query details.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-medium text-green-600 mb-2">Navigation Flow</h4>
+                        <p class="text-gray-600">Follow the numbered page flows to understand the complete user journey through your application.</p>
+                    </div>
+                </div>
+            </div>
+        `;
         
         html += '</div>';
         return html;

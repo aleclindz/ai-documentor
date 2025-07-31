@@ -49,6 +49,35 @@ code:not([class*="language-"]) {
     text-align: center;
 }
 
+/* Page Flow Cards */
+.page-flow-card {
+    transition: all 0.3s ease;
+}
+
+.page-flow-card:hover {
+    @apply shadow-md;
+    transform: translateY(-2px);
+}
+
+.action-item {
+    transition: all 0.2s ease;
+}
+
+.action-item:hover {
+    @apply bg-blue-50;
+}
+
+/* Cross-reference badges */
+.action-item a {
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.action-item a:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 /* Table of Contents */
 .toc-container {
     margin-bottom: 2rem;

@@ -2,6 +2,7 @@ import { BaseWorkflowGenerator, WorkflowGeneratorConfig, UserFlow } from './Base
 import { CLIWorkflowGenerator } from './CLIWorkflowGenerator.js';
 import { WebAppWorkflowGenerator } from './WebAppWorkflowGenerator.js';
 import { APIWorkflowGenerator } from './APIWorkflowGenerator.js';
+import { PageBasedWorkflowGenerator } from './PageBasedWorkflowGenerator.js';
 import { CodebaseAnalysis } from '../../analyzers/CodebaseAnalyzer.js';
 
 export class WorkflowGeneratorFactory {
@@ -46,8 +47,8 @@ export class WorkflowGeneratorFactory {
   }
 
   private selectBestGenerator(generators: BaseWorkflowGenerator[], analysis: CodebaseAnalysis): BaseWorkflowGenerator {
-    // Priority order: CLI tools are most specific, then APIs, then web apps
-    const priorityOrder = [CLIWorkflowGenerator, APIWorkflowGenerator, WebAppWorkflowGenerator];
+    // Priority order: CLI tools are most specific, then web apps (which includes page-based flows), then APIs
+    const priorityOrder = [CLIWorkflowGenerator, WebAppWorkflowGenerator, APIWorkflowGenerator];
     
     for (const GeneratorClass of priorityOrder) {
       const generator = generators.find(g => g instanceof GeneratorClass);

@@ -10,16 +10,17 @@ export class CLIWorkflowGenerator extends BaseWorkflowGenerator {
                               analysis.dependencies.minimist);
     
     const hasBinField = false; // TODO: Add bin field detection to CodebaseAnalyzer
-    const hasCliScripts = Object.keys(analysis.scripts).some(script => 
-      script.includes('cli') || script.includes('start') || script.includes('bin')
-    );
+    const hasCliScripts = analysis.scripts ? (
+      Object.keys(analysis.scripts).some(script => script.includes('cli') || script.includes('bin')) ||
+      Object.values(analysis.scripts).some(script => script.includes('node ') && !script.includes('react-scripts'))
+    ) : false;
     
     // Check for CLI patterns in file names
     const hasCliFiles = analysis.files.some(file => 
       file.path.includes('cli.') || 
       file.path.includes('bin/') ||
       file.path.includes('command') ||
-      file.content.includes('#!/usr/bin/env node')
+      (file.content && file.content.includes('#!/usr/bin/env node'))
     );
 
     this.log(`CLI Detection: deps=${hasCLIDependencies}, bin=${hasBinField}, scripts=${hasCliScripts}, files=${hasCliFiles}`);
@@ -71,7 +72,7 @@ Analyze this CLI tool and create structured user workflow documentation covering
 **Package Name**: ${analysis.projectName}
 **Technology**: ${analysis.framework.join(', ')}
 **Dependencies**: ${dependencies}
-**Scripts**: ${Object.keys(analysis.scripts).join(', ')}
+**Scripts**: ${analysis.scripts ? Object.keys(analysis.scripts).join(', ') : 'No scripts detected'}
 **Binary**: Standard Node.js CLI
 
 ## CLI Commands Detected:
