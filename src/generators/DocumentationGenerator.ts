@@ -47,8 +47,12 @@ export interface ComponentDocumentation {
 
 export interface PageDocumentation {
   route: string;
+  name: string;
+  slug: string;
   purpose: string;
   components: string[];
+  componentsMarkdown: string;
+  navigationLinks: string[];
   dataFlow: string;
 }
 
