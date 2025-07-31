@@ -118,6 +118,23 @@ class DocumentationViewer {
         // Simplified - just load the section directly
         this.loadSection(section);
     }
+    
+    toggleNavSection(sectionName) {
+        const subsections = document.getElementById(`${sectionName}-subsections`);
+        const arrow = document.getElementById(`${sectionName}-arrow`);
+        
+        if (subsections && arrow) {
+            if (subsections.classList.contains('hidden')) {
+                // Show subsections
+                subsections.classList.remove('hidden');
+                arrow.classList.add('rotate-180');
+            } else {
+                // Hide subsections
+                subsections.classList.add('hidden');
+                arrow.classList.remove('rotate-180');
+            }
+        }
+    }
 
     scrollToSection(id) {
         const element = document.getElementById(id);
@@ -624,6 +641,10 @@ function toggleNavGroup(section) {
     docViewer.toggleNavGroup(section);
 }
 
+function toggleNavSection(sectionName) {
+    docViewer.toggleNavSection(sectionName);
+}
+
 function scrollToSection(id) {
     docViewer.scrollToSection(id);
 }
@@ -639,9 +660,17 @@ function openFile(filePath) {
 // Initialize from URL hash on page load
 document.addEventListener('DOMContentLoaded', function() {
     const hash = window.location.hash.replace('#', '');
-    if (hash && ['overview', 'architecture', 'frontend', 'backend', 'database', 'userflows', 'deployment', 'troubleshooting'].includes(hash)) {
+    const validSections = ['overview', 'architecture', 'frontend', 'frontend-pages', 'frontend-components', 'backend', 'database', 'userflows', 'deployment', 'troubleshooting'];
+    
+    if (hash && validSections.includes(hash)) {
         // Small delay to ensure server is ready
-        setTimeout(() => loadSection(hash), 100);
+        setTimeout(() => {
+            // If it's a frontend subsection, make sure the parent section is expanded
+            if (hash.startsWith('frontend-')) {
+                toggleNavSection('frontend');
+            }
+            loadSection(hash);
+        }, 100);
     } else {
         // Small delay to ensure server is ready
         setTimeout(() => loadSection('overview'), 100);

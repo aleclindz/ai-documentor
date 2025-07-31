@@ -72,6 +72,87 @@ export class DocumentationServer {
       }
     });
 
+    // Frontend Pages section
+    this.app.get('/api/frontend-pages', async (req, res) => {
+      await this.ensureDocumentation();
+      const frontend = this.documentation?.frontend;
+      if (!frontend || !frontend.pages || frontend.pages.length === 0) {
+        res.json({ content: 'No pages detected in this frontend application.' });
+      } else {
+        // Generate Pages markdown from the pages data
+        let pagesMarkdown = `# Frontend Pages\n\nThis application consists of ${frontend.pages.length} distinct pages that users can navigate to.\n\n`;
+        
+        frontend.pages.forEach((page: any) => {
+          pagesMarkdown += `## ${page.name}\n`;
+          pagesMarkdown += `**Route**: \`${page.route}\`\n\n`;
+          pagesMarkdown += `${page.purpose}\n\n`;
+          
+          if (page.componentsMarkdown) {
+            pagesMarkdown += page.componentsMarkdown + '\n\n';
+          }
+          
+          if (page.navigationLinks && page.navigationLinks.length > 0) {
+            pagesMarkdown += `### Navigation Links\n\n`;
+            pagesMarkdown += `This page provides navigation to:\n`;
+            page.navigationLinks.forEach((link: string) => {
+              pagesMarkdown += `- ${link}\n`;
+            });
+            pagesMarkdown += '\n';
+          }
+        });
+        
+        res.json({ content: pagesMarkdown });
+      }
+    });
+
+    // Frontend Components section
+    this.app.get('/api/frontend-components', async (req, res) => {
+      await this.ensureDocumentation();
+      const frontend = this.documentation?.frontend;
+      if (!frontend || !frontend.components || frontend.components.length === 0) {
+        res.json({ content: 'No interactive components detected in this frontend application.' });
+      } else {
+        // Generate Components markdown
+        let componentsMarkdown = `# Frontend Components\n\nThis application contains ${frontend.components.length} interactive components across all pages.\n\n`;
+        
+        // Group components by page/location
+        const componentsByFile: Record<string, any[]> = {};
+        frontend.components.forEach((component: any) => {
+          const location = component.filePath || 'Unknown';
+          if (!componentsByFile[location]) {
+            componentsByFile[location] = [];
+          }
+          componentsByFile[location].push(component);
+        });
+        
+        Object.entries(componentsByFile).forEach(([location, components]) => {
+          componentsMarkdown += `## Components in ${location}\n\n`;
+          
+          components.forEach(component => {
+            componentsMarkdown += `### ${component.name}\n\n`;
+            componentsMarkdown += `**Purpose**: ${component.purpose}\n\n`;
+            
+            if (component.props && component.props.length > 0) {
+              componentsMarkdown += `**Props**: ${component.props.join(', ')}\n\n`;
+            }
+            
+            componentsMarkdown += `**Usage**: ${component.usage}\n\n`;
+            componentsMarkdown += `**Interactions**: ${component.interactions}\n\n`;
+            
+            if (component.uiEvents && component.uiEvents.length > 0) {
+              componentsMarkdown += `**UI Events**:\n`;
+              component.uiEvents.forEach((event: any) => {
+                componentsMarkdown += `- ${event.event}: ${event.description}\n`;
+              });
+              componentsMarkdown += '\n';
+            }
+          });
+        });
+        
+        res.json({ content: componentsMarkdown });
+      }
+    });
+
     this.app.get('/api/backend', async (req, res) => {
       await this.ensureDocumentation();
       const content = this.documentation?.backend;

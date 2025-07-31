@@ -31,11 +31,35 @@
                     <span class="font-medium">Architecture</span>
                 </button>
 
-                <button onclick="loadSection('frontend')" 
-                        class="nav-item w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center border-b border-gray-100">
-                    <span class="text-lg mr-3">🎨</span>
-                    <span class="font-medium">Frontend</span>
-                </button>
+                <div class="nav-group">
+                    <button onclick="toggleNavSection('frontend')" 
+                            class="nav-item w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center justify-between border-b border-gray-100">
+                        <div class="flex items-center">
+                            <span class="text-lg mr-3">🎨</span>
+                            <span class="font-medium">Frontend</span>
+                        </div>
+                        <svg id="frontend-arrow" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="frontend-subsections" class="nav-subsections bg-gray-50 border-b border-gray-100 hidden">
+                        <button onclick="loadSection('frontend')" 
+                                class="nav-subitem w-full text-left px-8 py-2 hover:bg-blue-50 transition-colors flex items-center text-sm">
+                            <span class="text-base mr-2">📋</span>
+                            <span>Overview</span>
+                        </button>
+                        <button onclick="loadSection('frontend-pages')" 
+                                class="nav-subitem w-full text-left px-8 py-2 hover:bg-blue-50 transition-colors flex items-center text-sm">
+                            <span class="text-base mr-2">📄</span>
+                            <span>Pages</span>
+                        </button>
+                        <button onclick="loadSection('frontend-components')" 
+                                class="nav-subitem w-full text-left px-8 py-2 hover:bg-blue-50 transition-colors flex items-center text-sm">
+                            <span class="text-base mr-2">🧩</span>
+                            <span>Components</span>
+                        </button>
+                    </div>
+                </div>
 
                 <button onclick="loadSection('backend')" 
                         class="nav-item w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors flex items-center border-b border-gray-100">

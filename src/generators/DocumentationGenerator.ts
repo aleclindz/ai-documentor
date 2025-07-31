@@ -8,6 +8,7 @@ import { CodebaseAnalysis, FileInfo, FunctionInfo, ComponentInfo, RouteInfo } fr
 import { Config } from '../utils/Config.js';
 import { MermaidGenerator } from './MermaidGenerator.js';
 import { WorkflowGeneratorFactory } from './workflows/index.js';
+import { ReactFrontendGenerator } from './ReactFrontendGenerator.js';
 import { slug } from '../utils/slug.js';
 
 export interface GeneratedDocumentation {
@@ -296,6 +297,122 @@ Format the response as well-structured Markdown with proper headers and engaging
   }
 
   private async generateFrontendDocs(analysis: CodebaseAnalysis): Promise<FrontendDocumentation> {
+    // Check if this is a React project to use React-specific generator
+    const isReactProject = analysis.framework.includes('React') || 
+                           analysis.dependencies.react || 
+                           analysis.dependencies['next'];
+
+    if (isReactProject) {
+      console.log('🎨 Using React-optimized frontend documentation generator...');
+      const reactGenerator = new ReactFrontendGenerator(analysis);
+      const reactFrontendDocs = await reactGenerator.generateFrontendDocs();
+      
+      // Convert ReactFrontendGenerator output to DocumentationGenerator format
+      return {
+        overview: reactFrontendDocs.overview,
+        featuresAndFunctionality: this.generateReactFeaturesAndFunctionality(reactFrontendDocs),
+        components: this.convertReactComponentsToDocFormat(reactFrontendDocs.pages),
+        pages: this.convertReactPagesToDocFormat(reactFrontendDocs.pages),
+        styling: this.detectStylingSystem(analysis),
+        stateManagement: this.detectStateManagement(analysis)
+      };
+    }
+
+    // Fallback to generic frontend documentation for non-React projects
+    return this.generateGenericFrontendDocs(analysis);
+  }
+  
+  private generateReactFeaturesAndFunctionality(reactDocs: any): string {
+    let features = `# Frontend Features & Functionality\n\nThis React application provides a comprehensive user interface with ${reactDocs.pages.length} distinct pages and interactive components.\n\n`;
+    
+    // Add pages overview
+    features += `## Pages Overview\n\n`;
+    reactDocs.pages.forEach((pageDoc: any) => {
+      features += `### ${pageDoc.page.name}\n`;
+      features += `**Route**: \`${pageDoc.page.route}\`\n\n`;
+      features += `${pageDoc.page.description}\n\n`;
+      
+      if (pageDoc.page.components.length > 0) {
+        features += `**Interactive Components**: ${pageDoc.page.components.length}\n`;
+        const interactiveComponents = pageDoc.page.components.filter((c: any) => 
+          ['button', 'link', 'form', 'input'].includes(c.type)
+        );
+        if (interactiveComponents.length > 0) {
+          features += `- ${interactiveComponents.map((c: any) => c.text || c.name).join(', ')}\n`;
+        }
+      }
+      features += '\n';
+    });
+    
+    // Add navigation flow
+    if (reactDocs.navigation.crossReferences.length > 0) {
+      features += `## Navigation Flow\n\n`;
+      features += `The application provides seamless navigation between pages through:\n\n`;
+      reactDocs.navigation.crossReferences.forEach((ref: any) => {
+        features += `- **${ref.trigger}** navigates from [${ref.from}](#${ref.from}) to [${ref.to}](#${ref.to})\n`;
+      });
+      features += '\n';
+    }
+    
+    return features;
+  }
+  
+  private convertReactComponentsToDocFormat(pages: any[]): ComponentDocumentation[] {
+    const components: ComponentDocumentation[] = [];
+    
+    pages.forEach(pageDoc => {
+      pageDoc.page.components.forEach((component: any) => {
+        components.push({
+          name: component.name,
+          slug: slug(component.name),
+          purpose: component.description,
+          props: component.props.map((p: any) => `${p.name}: ${p.type}`),
+          usage: `Used in ${pageDoc.page.name} page`,
+          interactions: component.onClick ? `Click handler: ${component.onClick}` : 'No interactions defined',
+          filePath: component.filePath,
+          uiEvents: component.onClick ? [{
+            event: 'click',
+            description: `User clicks ${component.text || component.name}`,
+            apiEndpointSlug: component.navigatesTo ? slug(component.navigatesTo) : undefined
+          }] : []
+        });
+      });
+    });
+    
+    return components;
+  }
+  
+  private convertReactPagesToDocFormat(pages: any[]): any[] {
+    return pages.map(pageDoc => ({
+      route: pageDoc.page.route,
+      name: pageDoc.page.name,
+      slug: pageDoc.page.slug,
+      purpose: pageDoc.page.description,
+      components: pageDoc.page.components.map((c: any) => c.name),
+      componentsMarkdown: pageDoc.componentsMarkdown,
+      navigationLinks: pageDoc.navigationLinks,
+      dataFlow: 'Data flows through React props and state management'
+    }));
+  }
+  
+  private detectStylingSystem(analysis: CodebaseAnalysis): string {
+    if (analysis.dependencies['styled-components']) return 'Styled Components';
+    if (analysis.dependencies['@emotion/react']) return 'Emotion CSS-in-JS';
+    if (analysis.dependencies['tailwindcss']) return 'Tailwind CSS';
+    if (analysis.files.some(f => f.relativePath.includes('.scss') || f.relativePath.includes('.sass'))) return 'SCSS/Sass';
+    if (analysis.files.some(f => f.relativePath.includes('.css'))) return 'CSS';
+    return 'CSS/SCSS styling system';
+  }
+  
+  private detectStateManagement(analysis: CodebaseAnalysis): string {
+    if (analysis.dependencies['redux']) return 'Redux';
+    if (analysis.dependencies['zustand']) return 'Zustand';
+    if (analysis.dependencies['recoil']) return 'Recoil';
+    if (analysis.dependencies['@tanstack/react-query']) return 'React Query with React State';
+    return 'React State (useState, useContext)';
+  }
+  
+  private async generateGenericFrontendDocs(analysis: CodebaseAnalysis): Promise<FrontendDocumentation> {
     const frontendFiles = analysis.files.filter(f => 
       f.components.length > 0 || 
       f.type.toString().includes('react') || 
@@ -303,38 +420,6 @@ Format the response as well-structured Markdown with proper headers and engaging
       f.relativePath.includes('components') ||
       f.relativePath.includes('pages')
     );
-
-    const componentsPrompt = `
-# Frontend Component Documentation Generation
-
-Analyze these React/Frontend components and create detailed documentation with cross-linking support:
-
-${frontendFiles.slice(0, 5).map(f => `
-## File: ${f.relativePath}
-**Components**: ${f.components.map(c => c.name).join(', ')}
-**Functions**: ${f.functions.map(fn => fn.name).join(', ')}
-**Dependencies**: ${f.dependencies.slice(0, 5).join(', ')}
-
-\`\`\`typescript
-${f.content.slice(0, 1000)}...
-\`\`\`
-`).join('\n')}
-
-## UI → API Interaction Mapping:
-${analysis.links.map(l => `- ${l.uiComponent}.${l.event} -> ${l.apiEndpoint}`).join('\n')}
-
-For each component, provide:
-1. **name**: Component name
-2. **slug**: URL-friendly slug (auto-generated)
-3. **Purpose**: What the component does and when to use it
-4. **Props**: Expected properties and their types
-5. **User Interactions**: How users interact with it
-6. **uiEvents**: Array of {event, description, apiEndpointSlug} for interactions that call APIs
-7. **Data Flow**: How data flows in and out
-8. **Side Effects**: API calls, state updates, etc.
-
-Format as structured JSON: {"components": [ComponentDocumentation objects]}
-`;
 
     const overviewPrompt = `
 # Frontend Architecture Overview
@@ -346,7 +431,7 @@ Based on this frontend analysis:
 
 Create a comprehensive frontend overview covering:
 1. Architecture philosophy and patterns used
-2. Component hierarchy and organization
+2. Component hierarchy and organization  
 3. State management approach
 4. Styling methodology
 5. Key UI patterns and conventions
@@ -357,83 +442,49 @@ Provide detailed technical analysis in Markdown format with proper headers and s
     const featuresPrompt = `
 # Frontend Features & Functionality Analysis
 
-Analyze the frontend from a user perspective based on these components and pages:
-
-**Components Detected**:
-${frontendFiles.flatMap(f => f.components).slice(0, 10).map(c => `- ${c.name}: ${c.props.join(', ')}`).join('\n')}
-
-**Routes/Pages**:
-${analysis.files.flatMap(f => f.routes).slice(0, 5).map(r => `- ${r.path} (${r.method})`).join('\n')}
-
-**Key Files**:
-${frontendFiles.slice(0, 5).map(f => `- ${f.relativePath}: ${f.functions.length} functions, ${f.components.length} components`).join('\n')}
-
 Create comprehensive user-focused documentation covering:
 
 ## 1. Core Features Overview
 - What can users do with this application?
 - What are the main features and capabilities?
-- What problems does this solve for users?
 
-## 2. User Interface Components
+## 2. User Interface Components  
 - What buttons, forms, and interactive elements exist?
-- What does each UI component do from the user's perspective?
 - How do users interact with different parts of the interface?
 
-## 3. User Workflows & Interactions
-- What are the typical user journeys through the application?
-- How do users accomplish their goals?
-- What steps do users take to complete common tasks?
-
-## 4. Data & Information Display
-- What information is shown to users and where?
-- How is data organized and presented?
-- What can users do with the displayed information?
-
-## 5. Navigation & User Experience
+## 3. Navigation & User Experience
 - How do users move between different sections?
 - What navigation patterns are used?
-- How is the user experience optimized?
 
-Focus on user-visible functionality, not technical implementation. Write as if explaining to end users what they can expect when using the application. Use clear, non-technical language while being comprehensive about features and functionality.
-
+Focus on user-visible functionality. Use clear, non-technical language.
 Format with proper Markdown headers, subheaders, bullet points, and clear structure.
 `;
 
-    const [overview, featuresAndFunctionality, componentsResponse] = await Promise.all([
+    const [overview, featuresAndFunctionality] = await Promise.all([
       this.callOpenAI(overviewPrompt),
-      this.callOpenAI(featuresPrompt),
-      this.callOpenAI(componentsPrompt)
+      this.callOpenAI(featuresPrompt)
     ]);
 
-    let components: ComponentDocumentation[] = [];
-    try {
-      const parsed = JSON.parse(componentsResponse);
-      components = parsed.components || [];
-    } catch {
-      // Fallback to basic component analysis
-      components = frontendFiles.flatMap(f => 
-        f.components.map(c => ({
-          name: c.name,
-          slug: slug(c.name),
-          purpose: `${c.name} component`,
-          props: c.props,
-          usage: `Used in ${f.relativePath}`,
-          interactions: 'User interactions to be documented',
-          filePath: f.relativePath
-        }))
-      );
-    }
+    // Fallback component documentation
+    const components: ComponentDocumentation[] = frontendFiles.flatMap(f => 
+      f.components.map(c => ({
+        name: c.name,
+        slug: slug(c.name),
+        purpose: `${c.name} component`,
+        props: c.props,
+        usage: `Used in ${f.relativePath}`,
+        interactions: 'User interactions to be documented',
+        filePath: f.relativePath
+      }))
+    );
 
     return {
       overview,
       featuresAndFunctionality,
       components,
-      pages: [], // To be implemented based on routing analysis
-      styling: 'CSS/SCSS styling system',
-      stateManagement: analysis.dependencies['redux'] ? 'Redux' : 
-                      analysis.dependencies['zustand'] ? 'Zustand' : 
-                      'React State'
+      pages: [],
+      styling: this.detectStylingSystem(analysis),
+      stateManagement: this.detectStateManagement(analysis)
     };
   }
 
