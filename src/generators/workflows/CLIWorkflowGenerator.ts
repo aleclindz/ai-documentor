@@ -3,29 +3,53 @@ import { CodebaseAnalysis } from '../../analyzers/CodebaseAnalyzer.js';
 
 export class CLIWorkflowGenerator extends BaseWorkflowGenerator {
   canHandle(analysis: CodebaseAnalysis): boolean {
-    // Detect CLI tools by checking for commander.js, yargs, or CLI patterns
+    // Use more specific CLI detection to avoid false positives with web apps
     const hasCLIDependencies = !!(analysis.dependencies.commander || 
                               analysis.dependencies.yargs || 
                               analysis.dependencies['@oclif/core'] ||
                               analysis.dependencies.minimist);
     
     const hasBinField = false; // TODO: Add bin field detection to CodebaseAnalyzer
+    
+    // Be more specific with script detection to avoid Next.js/React false positives
     const hasCliScripts = analysis.scripts ? (
       Object.keys(analysis.scripts).some(script => script.includes('cli') || script.includes('bin')) ||
-      Object.values(analysis.scripts).some(script => script.includes('node ') && !script.includes('react-scripts'))
+      Object.entries(analysis.scripts).some(([key, script]) => 
+        script.includes('node ') && 
+        !script.includes('react-scripts') && 
+        !script.includes('next') && 
+        !script.includes('dev') && 
+        !script.includes('start')
+      )
     ) : false;
     
-    // Check for CLI patterns in file names
-    const hasCliFiles = analysis.files.some(file => 
-      file.path.includes('cli.') || 
-      file.path.includes('bin/') ||
-      file.path.includes('command') ||
-      (file.content && file.content.includes('#!/usr/bin/env node'))
-    );
+    // Be more specific with file detection
+    const hasCliFiles = analysis.files.some(file => {
+      const path = file.path.toLowerCase();
+      return (
+        path.includes('cli.') || 
+        path.includes('bin/') ||
+        (path.includes('command') && !path.includes('components') && !path.includes('node_modules')) ||
+        (file.content && file.content.includes('#!/usr/bin/env node') && !path.includes('node_modules'))
+      );
+    });
 
-    this.log(`CLI Detection: deps=${hasCLIDependencies}, bin=${hasBinField}, scripts=${hasCliScripts}, files=${hasCliFiles}`);
+    // Check if this is primarily a web app (should take precedence)
+    const isWebApp = analysis.framework.some(fw => 
+      ['React', 'Vue', 'Angular', 'Next.js', 'Nuxt.js', 'Svelte'].includes(fw)
+    ) || analysis.dependencies['react'] || analysis.dependencies['next'] || analysis.dependencies['vue'];
+
+    const cliIndicators = hasCLIDependencies || hasBinField || hasCliScripts || hasCliFiles;
     
-    return hasCLIDependencies || hasBinField || hasCliScripts || hasCliFiles;
+    // If it's clearly a web app with some CLI-like scripts, don't classify as CLI
+    if (isWebApp && !hasCLIDependencies) {
+      this.log(`CLI Detection: Skipping - detected web app with CLI-like scripts`);
+      return false;
+    }
+
+    this.log(`CLI Detection: deps=${hasCLIDependencies}, bin=${hasBinField}, scripts=${hasCliScripts}, files=${hasCliFiles}, webApp=${isWebApp}`);
+    
+    return cliIndicators;
   }
 
   async generateWorkflows(analysis: CodebaseAnalysis): Promise<UserFlow[]> {

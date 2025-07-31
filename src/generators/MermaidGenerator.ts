@@ -127,7 +127,7 @@ sequenceDiagram
           .flatMap(f => f.components.map(c => c.name)),
         ...analysis.framework.filter(f => ['React', 'Vue', 'Angular', 'Svelte'].includes(f))
       ])
-    ];
+    ].slice(0, 8); // Limit to 8 most important frontend components
 
     const backend = [
       ...new Set([
@@ -136,16 +136,19 @@ sequenceDiagram
           .map(f => f.relativePath.split('/').pop()?.replace(/\.[^/.]+$/, '') || 'API'),
         ...analysis.framework.filter(f => ['Express', 'Fastify', 'NestJS'].includes(f))
       ])
-    ];
+    ].slice(0, 6); // Limit to 6 most important backend components
 
-    const database = analysis.database.map(db => db.type);
+    // Simplify database representation - group by type instead of individual instances
+    const database = [
+      ...new Set(analysis.database.map(db => db.type))
+    ].slice(0, 3); // Limit to 3 database types
     
     const external = Object.keys(analysis.dependencies)
       .filter(dep => [
         'stripe', 'sendgrid', 'twilio', 'aws-sdk', 'firebase',
         'supabase', 'vercel', 'netlify'
       ].some(service => dep.includes(service)))
-      .slice(0, 5);
+      .slice(0, 3); // Limit to 3 external services
 
     return { frontend, backend, database, external };
   }
@@ -153,26 +156,31 @@ sequenceDiagram
   private generateConnections(components: { frontend: string[], backend: string[], database: string[], external: string[] }): string {
     const connections: string[] = [];
     
-    // Frontend to Backend connections
-    components.frontend.forEach((_, feIdx) => {
-      components.backend.forEach((_, beIdx) => {
-        connections.push(`FE${feIdx} --> BE${beIdx}`);
-      });
-    });
+    // Limit components to prevent diagram overload
+    const maxFrontend = Math.min(components.frontend.length, 8);
+    const maxBackend = Math.min(components.backend.length, 6);
+    const maxDatabase = Math.min(components.database.length, 3);
+    const maxExternal = Math.min(components.external.length, 3);
+    
+    // Create smart connections instead of full mesh
+    // Frontend to Backend: Connect main components to primary backend services
+    for (let feIdx = 0; feIdx < maxFrontend; feIdx++) {
+      const beIdx = feIdx % maxBackend; // Distribute connections
+      connections.push(`FE${feIdx} --> BE${beIdx}`);
+    }
 
-    // Backend to Database connections
-    components.backend.forEach((_, beIdx) => {
-      components.database.forEach((_, dbIdx) => {
-        connections.push(`BE${beIdx} --> DB${dbIdx}`);
-      });
-    });
+    // Backend to Database: Connect backend services to databases intelligently
+    for (let beIdx = 0; beIdx < maxBackend; beIdx++) {
+      const dbIdx = beIdx % maxDatabase; // Distribute connections
+      connections.push(`BE${beIdx} --> DB${dbIdx}`);
+    }
 
-    // Backend to External Services
-    components.backend.forEach((_, beIdx) => {
-      components.external.forEach((_, extIdx) => {
+    // Backend to External Services: Connect some backend services to external APIs
+    for (let beIdx = 0; beIdx < Math.min(maxBackend, 3); beIdx++) {
+      for (let extIdx = 0; extIdx < maxExternal; extIdx++) {
         connections.push(`BE${beIdx} --> EXT${extIdx}`);
-      });
-    });
+      }
+    }
 
     return connections.join('\n    ');
   }

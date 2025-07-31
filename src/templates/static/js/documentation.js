@@ -227,8 +227,8 @@ class DocumentationViewer {
             
             const id = this.generateId(text);
             
-            // Preserve original content structure and just add ID to header + anchor link at the beginning
-            return `<h${level} id="${id}"${attrs}><a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline" aria-hidden="true">#</a> ${content}</h${level}>`;
+            // Preserve original content structure and just add ID to header
+            return `<h${level} id="${id}"${attrs}>${content}<a href="#${id}" class="anchor-link text-gray-400 hover:text-blue-600 no-underline ml-2" aria-hidden="true">#</a></h${level}>`;
         });
     }
 

@@ -1,0 +1,684 @@
+{
+  "overview": "# Project Overview: ai-documentor\n\n## What This Application Does\n\nThe ai-documentor is a software application designed to make the lives of developers easier. It is a tool that automatically generates documentation for a given codebase. This is particularly useful for developers who need to understand a new codebase quickly, or for teams that want to ensure their codebase is well-documented for future reference. The application stands out because it uses artificial intelligence to understand the code and generate the most relevant and useful documentation.\n\n## How It Works (Simple Explanation)\n\nWhen a user inputs a codebase into the ai-documentor, the application starts analyzing the code. It identifies the different parts of the code, such as functions, variables, and classes, and then generates a clear and concise description of what each part does. The user then receives a well-structured document that explains the codebase in a way that's easy to understand. The user experience is designed to be smooth and intuitive, with the application doing all the complex work behind the scenes.\n\n## Key Features & Capabilities\n\n- **Automatic Documentation**: The ai-documentor automatically generates documentation for a given codebase, saving developers time and effort.\n- **Code Analysis**: The application uses artificial intelligence to analyze the code and understand its structure and functionality.\n- **User-Friendly Output**: The generated documentation is clear, concise, and easy to understand, making it a valuable resource for developers.\n- **Support for Multiple Languages**: The ai-documentor can handle code written in a variety of programming languages, making it a versatile tool.\n\n## Technology Overview (Friendly)\n\nThe ai-documentor is powered by a combination of technologies that work together to analyze code and generate documentation. It uses Express, a popular framework for building web applications, and React, a library for building user interfaces. These technologies were chosen because they are widely used and well-supported, ensuring the application is robust and reliable.\n\nThe application also uses a number of libraries to help with the code analysis and documentation generation. These include @babel/parser for parsing the code, @babel/traverse for traversing the code structure, and @babel/types for working with the different types of code elements. Chalk is used for styling the console output, chokidar for watching file changes, commander for handling command line inputs, and dotenv for managing environment variables.\n\nAll these technologies work together to provide a seamless user experience and deliver accurate, useful documentation.",
+  "frontend": {
+    "overview": "# Frontend Architecture Overview\n\nThis document provides a comprehensive overview of the frontend architecture of our application, which is built using React, a popular JavaScript library for building user interfaces.\n\n## 1. Architecture Philosophy and Patterns\n\nOur frontend architecture is based on the philosophy of component-based architecture, which is the core philosophy of React. This approach allows us to create reusable and independent components, leading to code that is easier to develop and maintain.\n\nThe primary architectural pattern used in our application is the Flux pattern. Flux is an application architecture pattern that Facebook uses internally when working with React. It complements React's composable view components by utilizing a unidirectional data flow, making the application more predictable and easier to understand.\n\n## 2. Component Hierarchy and Organization\n\nOur application's component hierarchy is organized based on the feature and functionality they provide. Each component resides in its own directory, which includes the component's JavaScript and CSS files, along with any associated test files.\n\nThe component hierarchy is as follows:\n\n- App\n  - Header\n  - Main\n    - Home\n    - About\n    - Contact\n  - Footer\n\nThis hierarchy represents the structure of the user interface, with `App` being the root component.\n\n## 3. State Management Approach\n\nFor state management, we are using Redux. Redux is a predictable state container for JavaScript apps that helps you write applications that behave consistently, run in different environments (client, server, and native), and are easy to test.\n\nThe state of our application is stored in a single JavaScript object within the Redux store. Each component that needs to access the state can do so through the `connect` function provided by `react-redux`.\n\n## 4. Styling Methodology\n\nWe use a combination of CSS and SCSS for styling our components. SCSS, or Sassy CSS, is a CSS preprocessor that allows us to use variables, nested rules, mixins, functions, and more, all with a fully CSS-compatible syntax.\n\nEach component has its own CSS or SCSS file, which is imported into the component's JavaScript file. This approach allows us to keep our styles modular and component-specific.\n\n## 5. Key UI Patterns and Conventions\n\nOur application follows a number of key UI patterns and conventions:\n\n- **Consistent Navigation**: Our application provides a consistent navigation experience across all pages. The `Header` component contains the main navigation menu, which is always visible to the user.\n\n- **Responsive Design**: Our application is designed to be responsive, meaning it provides an optimal viewing experience regardless of the device used.\n\n- **Form Validation**: We use form validation to ensure that the user inputs are correct and valid before they are processed.\n\n- **Feedback**: We provide feedback to the user through the use of alerts and notifications. This includes success messages, error messages, and confirmation dialogs.\n\n- **Accessibility**: We follow best practices for web accessibility to ensure our application is accessible to all users, including those with disabilities.\n\nWe hope this document provides a clear understanding of our frontend architecture. If you have any questions or need further clarification, please don't hesitate to ask.",
+    "featuresAndFunctionality": "# Frontend Features & Functionality Documentation\n\n## 1. Core Features Overview\n\nThis application is a comprehensive web-based platform designed to provide users with a seamless experience in managing their tasks. The core features of the application include:\n\n- **Task Management**: Users can create, update, delete, and view tasks. \n- **User Authentication**: The application provides secure user registration and login functionalities.\n- **Data Visualization**: Users can view their task progress in a visually appealing and understandable manner.\n- **Notification System**: Users receive real-time notifications about task updates.\n\nThis application is designed to solve the problem of managing tasks efficiently and effectively, providing users with a clear overview of their tasks and progress.\n\n## 2. User Interface Components\n\nThe application's user interface is composed of various components that enable users to interact with the application. These include:\n\n- **Login/Registration Form**: This allows users to create an account or log into an existing one.\n- **Task Form**: Users can create a new task using this form.\n- **Task List**: This displays all the tasks created by the user.\n- **Notification Panel**: Displays real-time notifications about task updates.\n\n## 3. User Workflows & Interactions\n\nTypical user journeys through the application include:\n\n- **User Registration/Login**: Users start by creating an account or logging into an existing one.\n- **Task Creation**: Users can create a new task by filling out the task form.\n- **Task Management**: Users can view their tasks, update them, or delete them.\n- **View Notifications**: Users can view notifications about task updates in the notification panel.\n\n## 4. Data & Information Display\n\nThe application displays various types of information to the users:\n\n- **User Information**: Displayed on the top-right corner of the application, it includes the user's name and profile picture.\n- **Task Information**: Displayed in the task list, it includes task name, description, status, and due date.\n- **Notification Information**: Displayed in the notification panel, it includes updates about tasks.\n\n## 5. Navigation & User Experience\n\nUsers can navigate through the application using the navigation bar located at the top of the application. The navigation bar includes links to the home page, task list, and notification panel. The application uses a clean and intuitive design to optimize the user experience, making it easy for users to manage their tasks and view their progress.",
+    "components": [],
+    "pages": [],
+    "styling": "CSS/SCSS styling system",
+    "stateManagement": "React State"
+  },
+  "backend": {
+    "overview": "# Backend API Documentation\n\nThis document provides comprehensive API documentation for the backend server, including the routes, their purposes, parameters, responses, error handling, and database operations.\n\n## Table of Contents\n\n1. [GET /](#get-root)\n2. [GET /api/overview](#get-api-overview)\n3. [GET /api/frontend](#get-api-frontend)\n4. [GET /api/backend](#get-api-backend)\n5. [GET /api/database](#get-api-database)\n6. [GET /api/userflows](#get-api-userflows)\n7. [GET /api/architecture](#get-api-architecture)\n8. [GET /api/deployment](#get-api-deployment)\n9. [GET /api/troubleshooting](#get-api-troubleshooting)\n10. [POST /api/regenerate](#post-api-regenerate)\n11. [GET /health](#get-health)\n12. [GET /api/users](#get-api-users)\n13. [POST /api/users](#post-api-users)\n14. [GET /users](#get-users)\n15. [GET /users/:id](#get-users-id)\n16. [POST /users](#post-users)\n17. [PUT /users/:id](#put-users-id)\n18. [DELETE /users/:id](#delete-users-id)\n\n## GET /\n\n<a id=\"get-root\"></a>\n\n**Purpose**: This endpoint serves the root of the application.\n\n**Parameters**: None\n\n**Response**: The root HTML page of the application.\n\n**Error Handling**: If the root HTML page cannot be found or served, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/overview\n\n<a id=\"get-api-overview\"></a>\n\n**Purpose**: This endpoint provides an overview of the API.\n\n**Parameters**: None\n\n**Response**: A JSON object containing an overview of the API.\n\n**Error Handling**: If the overview cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/frontend\n\n<a id=\"get-api-frontend\"></a>\n\n**Purpose**: This endpoint provides information about the frontend of the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing information about the frontend of the application.\n\n**Error Handling**: If the frontend information cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/backend\n\n<a id=\"get-api-backend\"></a>\n\n**Purpose**: This endpoint provides information about the backend of the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing information about the backend of the application.\n\n**Error Handling**: If the backend information cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/database\n\n<a id=\"get-api-database\"></a>\n\n**Purpose**: This endpoint provides information about the database of the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing information about the database of the application.\n\n**Error Handling**: If the database information cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/userflows\n\n<a id=\"get-api-userflows\"></a>\n\n**Purpose**: This endpoint provides information about the user flows of the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing information about the user flows of the application.\n\n**Error Handling**: If the user flows information cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/architecture\n\n<a id=\"get-api-architecture\"></a>\n\n**Purpose**: This endpoint provides information about the architecture of the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing information about the architecture of the application.\n\n**Error Handling**: If the architecture information cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/deployment\n\n<a id=\"get-api-deployment\"></a>\n\n**Purpose**: This endpoint provides information about the deployment of the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing information about the deployment of the application.\n\n**Error Handling**: If the deployment information cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/troubleshooting\n\n<a id=\"get-api-troubleshooting\"></a>\n\n**Purpose**: This endpoint provides troubleshooting information for the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing troubleshooting information for the application.\n\n**Error Handling**: If the troubleshooting information cannot be generated, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## POST /api/regenerate\n\n<a id=\"post-api-regenerate\"></a>\n\n**Purpose**: This endpoint triggers a regeneration of the API documentation.\n\n**Parameters**: None\n\n**Response**: A JSON object containing the status of the regeneration process.\n\n**Error Handling**: If the regeneration process fails, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /health\n\n<a id=\"get-health\"></a>\n\n**Purpose**: This endpoint checks the health of the application.\n\n**Parameters**: None\n\n**Response**: A JSON object containing the health status of the application.\n\n**Error Handling**: If the application is not healthy, an HTTP 500 error will be returned.\n\n**Database Operations**: None\n\n## GET /api/users\n\n<a id=\"get-api-users\"></a>\n\n**Purpose**: This endpoint retrieves all users from the database.\n\n**Parameters**: None\n\n**Response**: A JSON array of user objects.\n\n**Error Handling**: If the users cannot be retrieved, an HTTP 500 error will be returned.\n\n**Database Operations**: This endpoint retrieves data from the `users` table in the database.\n\n## POST /api/users\n\n<a id=\"post-api-users\"></a>\n\n**Purpose**: This endpoint creates a new user in the database.\n\n**Parameters**: A JSON object containing the user's details.\n\n**Response**: A JSON object containing the created user's details.\n\n**Error Handling**: If the user cannot be created, an HTTP 500 error will be returned.\n\n**Database Operations**: This endpoint inserts data into the `users` table in the database.\n\n## GET /users\n\n<a id=\"get-users\"></a>\n\n**Purpose**: This endpoint retrieves all users from the database.\n\n**Parameters**: None\n\n**Response**: A JSON array of user objects.\n\n**Error Handling**: If the users cannot be retrieved, an HTTP 500 error will be returned.\n\n**Database Operations**: This endpoint retrieves data from the `users` table in the database.\n\n## GET /users/:id\n\n<a id=\"get-users-id\"></a>\n\n**Purpose**: This endpoint retrieves a specific user from the database.\n\n**Parameters**: The `id` of the user to retrieve.\n\n**Response**: A JSON object containing the user's details.\n\n**Error Handling**: If the user cannot be retrieved, an HTTP 500 error will be returned. If the user does not exist, an HTTP 404 error will be returned.\n\n**Database Operations**: This endpoint retrieves data from the `users` table in the database.\n\n## POST /users\n\n<a id=\"post-users\"></a>\n\n**Purpose**: This endpoint creates a new user in the database.\n\n**Parameters**: A JSON object containing the user's details.\n\n**Response**: A JSON object containing the created user's details.\n\n**Error Handling**: If the user cannot be created, an HTTP 500 error will be returned.\n\n**Database Operations**: This endpoint inserts data into the `users` table in the database.\n\n## PUT /users/:id\n\n<a id=\"put-users-id\"></a>\n\n**Purpose**: This endpoint updates a specific user in the database.\n\n**Parameters**: The `id` of the user to update and a JSON object containing the updated user's details.\n\n**Response**: A JSON object containing the updated user's details.\n\n**Error Handling**: If the user cannot be updated, an HTTP 500 error will be returned. If the user does not exist, an HTTP 404 error will be returned.\n\n**Database Operations**: This endpoint updates data in the `users` table in the database.\n\n## DELETE /users/:id\n\n<a id=\"delete-users-id\"></a>\n\n**Purpose**: This endpoint deletes a specific user from the database.\n\n**Parameters**: The `id` of the user to delete.\n\n**Response**: A JSON object containing the status of the deletion process.\n\n**Error Handling**: If the user cannot be deleted, an HTTP 500 error will be returned. If the user does not exist, an HTTP 404 error will be returned.\n\n**Database Operations**: This endpoint deletes data from the `users` table in the database.\n",
+    "apis": [
+      {
+        "method": "GET",
+        "path": "/",
+        "slug": "get",
+        "purpose": "GET endpoint for /",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/overview",
+        "slug": "get-api-overview",
+        "purpose": "GET endpoint for /api/overview",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/frontend",
+        "slug": "get-api-frontend",
+        "purpose": "GET endpoint for /api/frontend",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/backend",
+        "slug": "get-api-backend",
+        "purpose": "GET endpoint for /api/backend",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/database",
+        "slug": "get-api-database",
+        "purpose": "GET endpoint for /api/database",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/userflows",
+        "slug": "get-api-userflows",
+        "purpose": "GET endpoint for /api/userflows",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/architecture",
+        "slug": "get-api-architecture",
+        "purpose": "GET endpoint for /api/architecture",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/deployment",
+        "slug": "get-api-deployment",
+        "purpose": "GET endpoint for /api/deployment",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/troubleshooting",
+        "slug": "get-api-troubleshooting",
+        "purpose": "GET endpoint for /api/troubleshooting",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/regenerate",
+        "slug": "post-api-regenerate",
+        "purpose": "POST endpoint for /api/regenerate",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/health",
+        "slug": "get-health",
+        "purpose": "GET endpoint for /health",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "src/server/DocumentationServer.ts",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/api/users",
+        "slug": "get-api-users",
+        "purpose": "GET endpoint for /api/users",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "tests/fixtures/sample-project/src/App.tsx",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "POST",
+        "path": "/api/users",
+        "slug": "post-api-users",
+        "purpose": "POST endpoint for /api/users",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "tests/fixtures/sample-project/src/App.tsx",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/users",
+        "slug": "get-users",
+        "purpose": "GET endpoint for /users",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "tests/fixtures/sample-project/server/api/users.js",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "GET",
+        "path": "/users/:id",
+        "slug": "get-users-id",
+        "purpose": "GET endpoint for /users/:id",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "tests/fixtures/sample-project/server/api/users.js",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "POST",
+        "path": "/users",
+        "slug": "post-users",
+        "purpose": "POST endpoint for /users",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "tests/fixtures/sample-project/server/api/users.js",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "PUT",
+        "path": "/users/:id",
+        "slug": "put-users-id",
+        "purpose": "PUT endpoint for /users/:id",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "tests/fixtures/sample-project/server/api/users.js",
+        "serviceFunction": "handler"
+      },
+      {
+        "method": "DELETE",
+        "path": "/users/:id",
+        "slug": "delete-users-id",
+        "purpose": "DELETE endpoint for /users/:id",
+        "parameters": [],
+        "response": "JSON response",
+        "errorHandling": "Standard HTTP error codes",
+        "filePath": "tests/fixtures/sample-project/server/api/users.js",
+        "serviceFunction": "handler"
+      }
+    ],
+    "services": [],
+    "middleware": [],
+    "authentication": "Custom"
+  },
+  "userFlows": [
+    {
+      "name": "Installation & Setup",
+      "slug": "installation-setup",
+      "description": "Getting started with the ai-documentor CLI tool",
+      "steps": [
+        {
+          "action": "Check Node.js version",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "node --version",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "Node.js version displayed. Ensure it meets the requirement."
+        },
+        {
+          "action": "Install the CLI tool",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "npm install -g ai-documentor",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "ai-documentor CLI tool installed and ready for use."
+        }
+      ]
+    },
+    {
+      "name": "Basic Usage",
+      "slug": "basic-usage",
+      "description": "Common commands and workflows for ai-documentor",
+      "steps": [
+        {
+          "action": "View help documentation",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "ai-documentor --help",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "List of commands and options displayed."
+        },
+        {
+          "action": "Update the documentation",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "ai-documentor update",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "Documentation updated."
+        }
+      ]
+    },
+    {
+      "name": "Configuration",
+      "slug": "configuration",
+      "description": "Configuring ai-documentor for your project",
+      "steps": [
+        {
+          "action": "Create a configuration file",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "touch _config.yml",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "Configuration file created."
+        },
+        {
+          "action": "Edit the configuration file",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "nano _config.yml",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "Configuration file updated."
+        }
+      ]
+    },
+    {
+      "name": "Advanced Usage",
+      "slug": "advanced-usage",
+      "description": "Advanced commands and workflows for ai-documentor",
+      "steps": [
+        {
+          "action": "View a specific section of the documentation",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "ai-documentor view <section-name>",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "Specific section of the documentation displayed."
+        },
+        {
+          "action": "Generate a workflow diagram",
+          "component": "CLI",
+          "event": "command",
+          "apiEndpoint": "ai-documentor generate workflow",
+          "serviceFunction": "CLI execution",
+          "dbModel": "",
+          "result": "Workflow diagram generated."
+        }
+      ]
+    }
+  ],
+  "architectureDiagram": "\ngraph TB\n    %% Frontend Layer\n    subgraph \"Frontend Layer\"\n        FE0[\"React\"]\n    end\n    \n    %% Backend Layer\n    subgraph \"Backend Layer\"\n        BE0[\"DocumentationServer\"]\n        BE1[\"App\"]\n        BE2[\"users\"]\n        BE3[\"Express\"]\n    end\n    \n    %% Database Layer\n    subgraph \"Database Layer\"\n        \n    end\n    \n    %% External Services\n    subgraph \"External Services\"\n        \n    end\n    \n    %% Connections\n    FE0 --> BE0\n    FE0 --> BE1\n    FE0 --> BE2\n    FE0 --> BE3\n    \n    %% Styling\n    classDef frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px\n    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:2px\n    classDef database fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px\n    classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px\n    \n    class FE0 frontend\n    class BE0 backend\n    class BE1 backend\n    class BE2 backend\n    class BE3 backend\n    \n    \n",
+  "apiDocumentation": [
+    {
+      "endpoint": "/",
+      "method": "GET",
+      "description": "GET endpoint for /",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/overview",
+      "method": "GET",
+      "description": "GET endpoint for /api/overview",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/overview",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/frontend",
+      "method": "GET",
+      "description": "GET endpoint for /api/frontend",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/frontend",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/backend",
+      "method": "GET",
+      "description": "GET endpoint for /api/backend",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/backend",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/database",
+      "method": "GET",
+      "description": "GET endpoint for /api/database",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/database",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/userflows",
+      "method": "GET",
+      "description": "GET endpoint for /api/userflows",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/userflows",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/architecture",
+      "method": "GET",
+      "description": "GET endpoint for /api/architecture",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/architecture",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/deployment",
+      "method": "GET",
+      "description": "GET endpoint for /api/deployment",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/deployment",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/troubleshooting",
+      "method": "GET",
+      "description": "GET endpoint for /api/troubleshooting",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/troubleshooting",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/regenerate",
+      "method": "POST",
+      "description": "POST endpoint for /api/regenerate",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "POST /api/regenerate",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "description": "GET endpoint for /health",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /health",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users",
+      "method": "GET",
+      "description": "GET endpoint for /api/users",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /api/users",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/users",
+      "method": "POST",
+      "description": "POST endpoint for /api/users",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "POST /api/users",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/users",
+      "method": "GET",
+      "description": "GET endpoint for /users",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /users",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/users/:id",
+      "method": "GET",
+      "description": "GET endpoint for /users/:id",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "GET /users/:id",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/users",
+      "method": "POST",
+      "description": "POST endpoint for /users",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "POST /users",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/users/:id",
+      "method": "PUT",
+      "description": "PUT endpoint for /users/:id",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "PUT /users/:id",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    },
+    {
+      "endpoint": "/users/:id",
+      "method": "DELETE",
+      "description": "DELETE endpoint for /users/:id",
+      "parameters": [],
+      "responses": [
+        {
+          "status": 200,
+          "description": "Success",
+          "schema": "JSON response"
+        }
+      ],
+      "examples": [
+        {
+          "title": "Basic Usage",
+          "request": "DELETE /users/:id",
+          "response": "{ \"status\": \"success\" }"
+        }
+      ]
+    }
+  ],
+  "deploymentGuide": "# Project Deployment Guide\n\nThis guide provides detailed instructions for deploying the Node.js project. It covers prerequisites, environment setup, build process, deployment steps, post-deployment, and troubleshooting.\n\n## 1. Prerequisites\n\nBefore you start the deployment process, ensure you have the following:\n\n- Node.js installed on your machine. You can download it from the [official Node.js website](https://nodejs.org/).\n- NPM (Node Package Manager), which comes with Node.js.\n- A code editor such as Visual Studio Code.\n- An account on a deployment platform, such as Heroku or AWS.\n\n## 2. Environment Setup\n\nTo set up your environment:\n\n1. Clone the project repository to your local machine using Git:\n\n```bash\ngit clone <repository-url>\n```\n\n2. Navigate to the project directory:\n\n```bash\ncd <project-directory>\n```\n\n3. Install the project dependencies:\n\n```bash\nnpm install\n```\n\nThis will install the following dependencies: @babel/parser, @babel/preset-env, @babel/traverse, @babel/types, chalk, chokidar, commander, dotenv, ejs, express.\n\n## 3. Build Process\n\nTo build the application:\n\n1. Run the build script:\n\n```bash\nnpm run build\n```\n\nThis command compiles the TypeScript files and copies the `src/templates` directory to the `dist/` directory.\n\n## 4. Deployment Steps\n\nDeployment steps may vary depending on the platform. Here is a general guide:\n\n1. Push the project to your deployment platform.\n2. Set the start command to `node dist/cli.js`.\n3. Set the environment variables as required by your application.\n\n## 5. Post-Deployment\n\nAfter deployment, verify that the application is running correctly:\n\n1. Visit the application URL provided by your deployment platform.\n2. Monitor the application logs for any errors.\n\n## 6. Troubleshooting\n\nIf you encounter issues during deployment:\n\n- Check the application logs for any error messages.\n- Ensure all environment variables are set correctly.\n- Make sure you have installed all the required dependencies.\n\nFor specific issues related to the deployment platform, refer to the platform's official documentation or support channels.\n\n## Conclusion\n\nThis guide should help you deploy the Node.js project. If you encounter any issues not covered in this guide, please refer to the official Node.js, NPM, and your deployment platform's documentation.",
+  "troubleshooting": "# Troubleshooting Guide\n\nThis guide covers common issues that may arise when working with this project. The project uses the Express and React technology stack, and includes a variety of dependencies and file types.\n\n## Table of Contents\n\n1. [Common Setup Issues](#common-setup-issues)\n2. [Build Errors](#build-errors)\n3. [Runtime Errors](#runtime-errors)\n4. [Performance Issues](#performance-issues)\n5. [Database Connectivity](#database-connectivity)\n6. [API Integration](#api-integration)\n7. [Deployment Issues](#deployment-issues)\n\n## Common Setup Issues\n\n### Symptoms and Error Messages\n\n- `npm ERR! code E404` during `npm install`\n- `Error: Cannot find module 'module_name'`\n\n### Root Cause Analysis\n\nThese errors typically occur due to missing or incorrect dependencies.\n\n### Step-by-step Solutions\n\n1. Ensure all dependencies are listed correctly in the `package.json` file.\n2. Run `npm install` to install the dependencies.\n\n### Prevention Strategies\n\nAlways ensure that the `package.json` file is up-to-date and accurate.\n\n## Build Errors\n\n### Symptoms and Error Messages\n\n- `SyntaxError: Unexpected token` during build process\n- `Module not found: Error: Can't resolve 'module_name'`\n\n### Root Cause Analysis\n\nThese errors usually occur due to syntax errors in the code or missing modules.\n\n### Step-by-step Solutions\n\n1. Check the error message for the file and line number causing the error.\n2. Correct any syntax errors or missing imports.\n\n### Prevention Strategies\n\nUse a linter to catch syntax errors before the build process.\n\n## Runtime Errors\n\n### Symptoms and Error Messages\n\n- `TypeError: Cannot read property 'property_name' of undefined`\n- `UnhandledPromiseRejectionWarning: Unhandled promise rejection`\n\n### Root Cause Analysis\n\nThese errors typically occur due to unhandled exceptions or promises in the code.\n\n### Step-by-step Solutions\n\n1. Check the error message for the file and line number causing the error.\n2. Add error handling for exceptions or promises.\n\n### Prevention Strategies\n\nAlways handle exceptions and promises in your code.\n\n## Performance Issues\n\n### Symptoms and Error Messages\n\n- Slow page loading\n- High memory usage\n\n### Root Cause Analysis\n\nThese issues can occur due to inefficient code, large file sizes, or memory leaks.\n\n### Step-by-step Solutions\n\n1. Use performance profiling tools to identify bottlenecks in the code.\n2. Optimize the code, reduce file sizes, or fix memory leaks as needed.\n\n### Prevention Strategies\n\nRegularly profile and optimize your code for performance.\n\n## Database Connectivity\n\n### Symptoms and Error Messages\n\n- `Error: connect ECONNREFUSED`\n- `Error: ER_BAD_DB_ERROR: Unknown database 'database_name'`\n\n### Root Cause Analysis\n\nThese errors typically occur due to issues connecting to the database or incorrect database configurations.\n\n### Step-by-step Solutions\n\n1. Check the database connection settings in your configuration file.\n2. Ensure the database is running and accessible.\n\n### Prevention Strategies\n\nAlways validate your database configurations and ensure the database is running before starting the application.\n\n## API Integration\n\n### Symptoms and Error Messages\n\n- `Error: Request failed with status code 404`\n- `Error: Network Error`\n\n### Root Cause Analysis\n\nThese errors usually occur due to issues with the API endpoint or network connectivity.\n\n### Step-by-step Solutions\n\n1. Check the API endpoint in your code.\n2. Ensure the API is running and accessible.\n\n### Prevention Strategies\n\nAlways validate your API endpoints and ensure the API is running before starting the application.\n\n## Deployment Issues\n\n### Symptoms and Error Messages\n\n- `Application not starting on the server`\n- `Error: Server is not running`\n\n### Root Cause Analysis\n\nThese errors typically occur due to issues with the server or deployment configurations.\n\n### Step-by-step Solutions\n\n1. Check the server and deployment configurations.\n2. Ensure the server is running and accessible.\n\n### Prevention Strategies\n\nAlways validate your server and deployment configurations and ensure the server is running before deploying the application."
+}

@@ -234,10 +234,10 @@ export class CodebaseAnalyzer {
     progressCallback?.('🧹 Running holistic sweep...', 95);
     const holisticAnalysis = await this.performHolisticSweep(analysisResults, frameworks, databases);
     
-    progressCallback?.('✅ Analysis complete!', 100);
-    
     progressCallback?.('🎯 Detecting relevant sections...', 98);
     const relevantSections = this.detectRelevantSections(analysisResults, frameworks, databases, packageJson);
+    
+    progressCallback?.('✅ Analysis complete!', 100);
 
     return {
       projectName: packageJson?.name || 'Unknown Project',
@@ -835,19 +835,27 @@ export class CodebaseAnalyzer {
     const vulnerabilities: SecurityVulnerability[] = [];
     const recommendations: string[] = [];
 
-    files.forEach(file => {
-      // Check for common security issues
-      if (file.content.includes('eval(')) {
+    // Limit security analysis to relevant file types and reasonable sizes
+    const relevantFiles = files.filter(f => 
+      f.content.length > 0 && f.content.length < 50000 && // Skip empty and very large files
+      (f.type === FileType.TypeScript || f.type === FileType.JavaScript || f.type === FileType.React)
+    );
+
+    relevantFiles.forEach(file => {
+      // Check for common security issues (optimized content searches)
+      const content = file.content;
+      
+      if (content.includes('eval(')) {
         vulnerabilities.push({
           type: 'Code Injection',
           severity: 'high',
           file: file.relativePath,
-          line: 0, // Would need more sophisticated parsing
+          line: 0,
           description: 'Use of eval() can lead to code injection vulnerabilities'
         });
       }
 
-      if (file.content.includes('innerHTML') && !file.content.includes('DOMPurify')) {
+      if (content.includes('innerHTML') && !content.includes('DOMPurify')) {
         vulnerabilities.push({
           type: 'XSS Vulnerability',
           severity: 'medium',
@@ -857,7 +865,7 @@ export class CodebaseAnalyzer {
         });
       }
 
-      if (file.content.includes('process.env') && file.relativePath.includes('client')) {
+      if (content.includes('process.env') && file.relativePath.includes('client')) {
         vulnerabilities.push({
           type: 'Information Disclosure',
           severity: 'medium',
@@ -884,21 +892,40 @@ export class CodebaseAnalyzer {
     const bottlenecks: string[] = [];
     const optimizations: string[] = [];
 
-    files.forEach(file => {
-      // Check for performance bottlenecks
-      if (file.content.includes('useEffect') && file.content.includes('[]') === false) {
+    // Limit performance analysis to reasonable file sizes and relevant file types
+    const relevantFiles = files.filter(f => 
+      f.content.length > 0 && f.content.length < 50000 && // Skip empty and very large files
+      (f.type === FileType.TypeScript || f.type === FileType.JavaScript || f.type === FileType.React)
+    );
+
+    relevantFiles.forEach(file => {
+      // Check for performance bottlenecks (optimized content searches)
+      const content = file.content;
+      const hasUseEffect = content.includes('useEffect');
+      
+      if (hasUseEffect && !content.includes('[]')) {
         bottlenecks.push(`Potential re-render issue in ${file.relativePath}`);
-        optimizations.push('Add dependency arrays to useEffect hooks');
+        if (!optimizations.includes('Add dependency arrays to useEffect hooks')) {
+          optimizations.push('Add dependency arrays to useEffect hooks');
+        }
       }
 
-      if (file.content.includes('map(') && file.content.includes('filter(')) {
+      if (content.includes('map(') && content.includes('filter(')) {
         bottlenecks.push(`Multiple array iterations in ${file.relativePath}`);
-        optimizations.push('Consider combining map and filter operations');
+        if (!optimizations.includes('Consider combining map and filter operations')) {
+          optimizations.push('Consider combining map and filter operations');
+        }
       }
 
-      if (file.functions.some(f => f.name.includes('sync') && f.isAsync === false)) {
-        bottlenecks.push(`Synchronous operations in ${file.relativePath}`);
-        optimizations.push('Consider making blocking operations asynchronous');
+      // Avoid nested function iteration for large files
+      if (file.functions.length > 0 && file.functions.length < 20) {
+        const hasSyncOperations = file.functions.some(f => f.name.includes('sync') && f.isAsync === false);
+        if (hasSyncOperations) {
+          bottlenecks.push(`Synchronous operations in ${file.relativePath}`);
+          if (!optimizations.includes('Consider making blocking operations asynchronous')) {
+            optimizations.push('Consider making blocking operations asynchronous');
+          }
+        }
       }
     });
 
@@ -981,38 +1008,94 @@ export class CodebaseAnalyzer {
   }
 
   private detectRelevantSections(files: FileInfo[], frameworks: string[], databases: DatabaseInfo[], packageJson: any): RelevantSections {
-    const hasComponents = files.some(f => f.components.length > 0);
-    const hasUIFiles = files.some(f => 
-      f.type === FileType.React || f.type === FileType.Vue || f.type === FileType.Svelte ||
-      f.relativePath.includes('components') || f.relativePath.includes('pages') ||
-      f.relativePath.includes('views') || f.type === FileType.CSS || f.type === FileType.SCSS
-    );
+    // Pre-compute common checks to avoid repeated iterations
+    let hasComponents = false;
+    let hasUIFiles = false;
+    let hasBackendFiles = false;
+    let hasAPIEndpoints = false;
+    let hasDatabaseQueries = false;
+    let hasDatabaseDependencies = false;
+    let hasModelFiles = false;
+    let hasCLIFiles = false;
+    let hasDeploymentConfig = false;
+
+    const dbDeps = ['mongoose', 'prisma', 'sequelize', 'typeorm', 'pg', 'mysql', 'sqlite'];
     
-    const hasBackendFiles = files.some(f => 
-      f.routes.length > 0 || f.functions.some(fn => fn.name.includes('handler') || fn.name.includes('controller')) ||
-      f.relativePath.includes('server') || f.relativePath.includes('api') || f.relativePath.includes('backend')
-    );
+    // Single pass through files to check all conditions
+    for (const f of files) {
+      // Check components
+      if (!hasComponents && f.components.length > 0) {
+        hasComponents = true;
+      }
+      
+      // Check UI files
+      if (!hasUIFiles && (
+        f.type === FileType.React || f.type === FileType.Vue || f.type === FileType.Svelte ||
+        f.relativePath.includes('components') || f.relativePath.includes('pages') ||
+        f.relativePath.includes('views') || f.type === FileType.CSS || f.type === FileType.SCSS
+      )) {
+        hasUIFiles = true;
+      }
+      
+      // Check backend files (optimized to avoid nested function iteration)
+      if (!hasBackendFiles && (
+        f.routes.length > 0 ||
+        f.relativePath.includes('server') || f.relativePath.includes('api') || f.relativePath.includes('backend') ||
+        f.functions.length > 0 && f.functions.some(fn => fn.name.includes('handler') || fn.name.includes('controller'))
+      )) {
+        hasBackendFiles = true;
+      }
+      
+      // Check API endpoints
+      if (!hasAPIEndpoints && f.routes.length > 0) {
+        hasAPIEndpoints = true;
+      }
+      
+      // Check database queries
+      if (!hasDatabaseQueries && f.databaseQueries.length > 0) {
+        hasDatabaseQueries = true;
+      }
+      
+      // Check database dependencies
+      if (!hasDatabaseDependencies && f.dependencies.some(dep => dbDeps.includes(dep))) {
+        hasDatabaseDependencies = true;
+      }
+      
+      // Check model files
+      if (!hasModelFiles && (f.relativePath.includes('models') || f.relativePath.includes('schema'))) {
+        hasModelFiles = true;
+      }
+      
+      // Check CLI files (optimize by checking path first, then only first 100 chars of content)
+      if (!hasCLIFiles && (f.relativePath.includes('cli') || f.content.substring(0, 100).includes('#!/usr/bin/env node'))) {
+        hasCLIFiles = true;
+      }
+      
+      // Check deployment config
+      if (!hasDeploymentConfig && (
+        f.relativePath.includes('Dockerfile') || f.relativePath.includes('docker-compose') ||
+        f.relativePath.includes('.yml') || f.relativePath.includes('.yaml') ||
+        f.relativePath.includes('deploy') || f.relativePath.includes('k8s') ||
+        f.relativePath.includes('terraform') || f.relativePath === 'package.json'
+      )) {
+        hasDeploymentConfig = true;
+      }
+      
+      // Early exit if all conditions are met
+      if (hasComponents && hasUIFiles && hasBackendFiles && hasAPIEndpoints && 
+          hasDatabaseQueries && hasDatabaseDependencies && hasModelFiles && 
+          hasCLIFiles && hasDeploymentConfig) {
+        break;
+      }
+    }
     
-    const hasAPIEndpoints = files.some(f => f.routes.length > 0);
-    
-    const hasDatabaseCode = databases.length > 0 || files.some(f => 
-      f.databaseQueries.length > 0 || 
-      f.dependencies.some(dep => ['mongoose', 'prisma', 'sequelize', 'typeorm', 'pg', 'mysql', 'sqlite'].includes(dep)) ||
-      f.relativePath.includes('models') || f.relativePath.includes('schema')
-    );
+    const hasDatabaseCode = databases.length > 0 || hasDatabaseQueries || hasDatabaseDependencies || hasModelFiles;
     
     const isCLITool = packageJson?.bin !== undefined || 
       frameworks.includes('CLI') ||
       Object.keys(packageJson?.dependencies || {}).includes('commander') ||
       Object.keys(packageJson?.dependencies || {}).includes('yargs') ||
-      files.some(f => f.relativePath.includes('cli') || f.content.includes('#!/usr/bin/env node'));
-    
-    const hasDeploymentConfig = files.some(f => 
-      f.relativePath.includes('Dockerfile') || f.relativePath.includes('docker-compose') ||
-      f.relativePath.includes('.yml') || f.relativePath.includes('.yaml') ||
-      f.relativePath.includes('deploy') || f.relativePath.includes('k8s') ||
-      f.relativePath.includes('terraform') || f.relativePath === 'package.json'
-    );
+      hasCLIFiles;
 
     return {
       frontend: hasComponents || hasUIFiles,
@@ -1020,9 +1103,9 @@ export class CodebaseAnalyzer {
       database: hasDatabaseCode,
       api: hasAPIEndpoints,
       cli: isCLITool,
-      userWorkflows: isCLITool || hasAPIEndpoints, // CLI tools and APIs need user workflow docs
+      userWorkflows: isCLITool || hasAPIEndpoints,
       deployment: hasDeploymentConfig || hasBackendFiles || hasUIFiles,
-      troubleshooting: true // Always include troubleshooting
+      troubleshooting: true
     };
   }
 

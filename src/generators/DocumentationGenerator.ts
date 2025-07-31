@@ -1002,7 +1002,7 @@ Navigate by clicking on any linked component, API, or database reference to jump
   private async callOpenAI(prompt: string): Promise<string> {
     try {
       const response = await this.openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
